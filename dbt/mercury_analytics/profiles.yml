@@ -1,0 +1,14 @@
+mercury:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host:     ep-twilight-math-ay15z2vf-pooler.c-5.us-east-2.aws.neon.tech
+      port:     5432
+      user:     neondb_owner
+      password: npg_cqo1IFpz4nmK
+      dbname:   neondb
+      schema:   staging
+      sslmode:  require
+      connect_timeout: 30
+      threads:  4

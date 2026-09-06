@@ -1,111 +1,113 @@
-# Mercury Data Schema
+# Mercury Database Schema
 
-Last updated: 2026-09-06 (Phase 2 — PostgreSQL Schema implemented)
+Last updated: 2026-09-06 (Phase 2 & dbt Staging configured for Olist Dataset)
 
-SQL files: `sql/schema.sql` (tables + indexes) · `sql/views.sql` (analytical views)
-Migration runner: `sql/migrate.py`
-
-Treat schema changes as contract changes: update this file, `sql/schema.sql`, `sql/views.sql`, and any affected tests together.
-
----
-
-## Tables
-
-### countries
-| Column       | Type         | Notes                                   |
-|--------------|--------------|-----------------------------------------|
-| country_id   | SERIAL PK    | Surrogate key                           |
-| country_name | VARCHAR(100) | UNIQUE. Name as in Online Retail II     |
-
-### products
-| Column      | Type        | Notes                                          |
-|-------------|-------------|------------------------------------------------|
-| stock_code  | VARCHAR(20) | PK. Natural key from dataset (e.g. 85123A)     |
-| description | TEXT        | Most recent description; may vary per invoice  |
-| created_at  | TIMESTAMPTZ | UTC default NOW()                              |
-| updated_at  | TIMESTAMPTZ | Updated by ETL when description changes        |
-
-### customers
-| Column        | Type        | Notes                                        |
-|---------------|-------------|----------------------------------------------|
-| customer_id   | INTEGER PK  | 5-digit CustomerID from Online Retail II      |
-| country_id    | INTEGER FK  | → countries. Most frequent country (ETL set) |
-| first_order_at | TIMESTAMPTZ | Earliest valid invoice date                 |
-| last_order_at  | TIMESTAMPTZ | Most recent valid invoice date (recency base)|
-| created_at    | TIMESTAMPTZ | UTC default NOW()                            |
-| updated_at    | TIMESTAMPTZ | UTC default NOW()                            |
-
-Indexes: `country_id`, `last_order_at`
-
-### orders
-| Column       | Type        | Notes                                          |
-|--------------|-------------|------------------------------------------------|
-| invoice      | VARCHAR(20) | PK. Natural invoice number (e.g. 536365)       |
-| customer_id  | INTEGER FK  | → customers. NOT NULL, CASCADE delete          |
-| country_id   | INTEGER FK  | → countries                                    |
-| invoice_date | TIMESTAMPTZ | UTC-normalised InvoiceDate. NOT NULL           |
-| is_cancelled | BOOLEAN     | TRUE if invoice starts with 'C'. Default FALSE |
-| created_at   | TIMESTAMPTZ | UTC default NOW()                              |
-
-Indexes: `customer_id`, `invoice_date`, `(customer_id, invoice_date)`
-
-### order_items
-| Column     | Type          | Notes                                           |
-|------------|---------------|-------------------------------------------------|
-| item_id    | BIGSERIAL PK  | Surrogate key                                   |
-| invoice    | VARCHAR(20) FK | → orders. CASCADE delete                       |
-| stock_code | VARCHAR(20) FK | → products                                    |
-| quantity   | INTEGER       | CHECK ≠ 0. ETL excludes zero-quantity rows      |
-| unit_price | NUMERIC(12,4) | CHECK ≥ 0. Zero allowed (gifts/samples)         |
-| revenue    | NUMERIC(14,4) | **Generated stored**: quantity × unit_price     |
-| created_at | TIMESTAMPTZ   | UTC default NOW()                               |
-
-Indexes: `invoice`, `stock_code`, `(invoice, stock_code)`
-
-### customer_metrics
-| Column                  | Type          | Notes                                              |
-|-------------------------|---------------|----------------------------------------------------|
-| customer_id             | INTEGER PK FK | → customers. CASCADE delete                        |
-| recency_days            | INTEGER       | Days since last invoice (relative to ref date)     |
-| frequency               | INTEGER       | Distinct valid invoice count                       |
-| monetary                | NUMERIC(14,2) | Total spend in GBP                                 |
-| rfm_r_score             | SMALLINT      | Recency quintile 1–5 (5 = most recent)             |
-| rfm_f_score             | SMALLINT      | Frequency quintile 1–5 (5 = highest)              |
-| rfm_m_score             | SMALLINT      | Monetary quintile 1–5 (5 = highest)               |
-| rfm_segment             | VARCHAR(50)   | VIP / Loyal / At Risk / Lost / etc.                |
-| churn_probability       | NUMERIC(6,5)  | Model output in [0, 1]                             |
-| is_churned              | BOOLEAN       | Ground-truth label for model training              |
-| revenue_at_risk         | NUMERIC(14,2) | monetary × churn_probability                       |
-| avg_order_value         | NUMERIC(12,2) | total_revenue ÷ order_count                        |
-| purchase_frequency      | NUMERIC(10,4) | Orders per time unit                               |
-| unique_products         | INTEGER       | Count of distinct StockCodes purchased             |
-| return_rate             | NUMERIC(6,5)  | Fraction of items returned in [0, 1]               |
-| avg_days_between_orders | NUMERIC(10,2) | Mean inter-order gap in days                       |
-| total_items             | INTEGER       | Total line items purchased                         |
-| last_order_date         | TIMESTAMPTZ   | Denormalised from customers.last_order_at          |
-| computed_at             | TIMESTAMPTZ   | First computation timestamp                        |
-| updated_at              | TIMESTAMPTZ   | Most recent pipeline refresh                       |
-
-Indexes: `rfm_segment`, `churn_probability DESC`, `revenue_at_risk DESC`, `is_churned`
+Database: PostgreSQL (Neon-hosted / local compatible)  
+SQL files: `sql/schema.sql` (raw tables + indexes) · `sql/views.sql` (raw helper views)  
+Migration runner: `sql/migrate.py`  
+Transformation: dbt (`dbt/mercury_analytics/`)
 
 ---
 
-## Analytical Views
+## Architecture Principles
 
-| View                        | Purpose                                              |
-|-----------------------------|------------------------------------------------------|
-| `vw_customer_revenue`       | Per-customer revenue aggregates (RFM + ML input)     |
-| `vw_rfm_base`               | Adds recency_days relative to max invoice date       |
-| `vw_at_risk_customers`      | Churn-ranked list with priority tier                 |
-| `vw_segment_summary`        | Segment-level counts and revenue for BI dashboards   |
-| `vw_revenue_at_risk_summary`| Single-row exposure summary for API endpoint         |
+1. **Schemas**:
+   - `raw`: Direct ingest of the 9 Olist e-commerce CSVs with original column names and types.
+   - `raw_marketing`: Ingest of the 2 marketing funnel CSVs (optional seller acquisition module).
+   - `staging`: dbt views providing cleaned types, standard casing, and derived staging flags.
+   - `intermediate` / `mart`: dbt analytics models resolving entities by `customer_unique_id`.
+2. **Customer Key Resolution**:
+   - `customer_id` is order-scoped (1 per order).
+   - `customer_unique_id` is the true returning customer key.
+   - All RFM, churn metrics, and customer aggregations must group by `customer_unique_id`.
 
 ---
 
-## Design Rules
+## 1. `raw` Schema (E-Commerce)
 
-- All timestamps are TIMESTAMPTZ (UTC).
-- Money uses NUMERIC: NUMERIC(12,4) for unit prices, NUMERIC(14,2) for totals.
-- `order_items.revenue` is a generated stored column — do not write to it directly.
-- Schema changes require updating this file, `sql/schema.sql`, `sql/views.sql`, and affected tests.
-- Never expose raw `DATABASE_URL` or credentials through API responses or logs.
+### `raw.customers`
+- **Description**: Customer order records.
+- **Key**: `customer_id` (VARCHAR(50) PK, order-scoped).
+- **Columns**: `customer_unique_id` (VARCHAR(50) NOT NULL, indexed), `customer_zip_code_prefix`, `customer_city`, `customer_state`.
+- **Expected Rows**: 99,441.
+
+### `raw.orders`
+- **Description**: E-commerce orders and status timestamps.
+- **Key**: `order_id` (VARCHAR(50) PK).
+- **Columns**: `customer_id` (FK → `raw.customers`), `order_status`, `order_purchase_timestamp` (TIMESTAMPTZ, indexed), `order_approved_at`, `order_delivered_carrier_date`, `order_delivered_customer_date`, `order_estimated_delivery_date`.
+- **Expected Rows**: 99,441 (~96,478 delivered).
+
+### `raw.order_items`
+- **Description**: Line items per order.
+- **Key**: `(order_id, order_item_id)` PK.
+- **Columns**: `order_id` (FK), `order_item_id`, `product_id` (FK → `raw.products`), `seller_id` (FK → `raw.sellers`), `shipping_limit_date`, `price` (NUMERIC(10,2)), `freight_value` (NUMERIC(10,2)).
+- **Expected Rows**: 112,650.
+
+### `raw.order_payments`
+- **Description**: Payment transactions per order.
+- **Key**: `(order_id, payment_sequential)` PK.
+- **Columns**: `order_id` (FK), `payment_sequential`, `payment_type` (credit_card, boleto, voucher, debit_card), `payment_installments`, `payment_value` (NUMERIC(10,2)).
+- **Expected Rows**: 103,886.
+
+### `raw.order_reviews`
+- **Description**: Customer feedback per order.
+- **Key**: `review_id` (VARCHAR(50) PK).
+- **Columns**: `order_id` (FK), `review_score` (SMALLINT 1–5), `review_comment_title`, `review_comment_message`, `review_creation_date`, `review_answer_timestamp`.
+- **Expected Rows**: 99,224.
+
+### `raw.products`
+- **Description**: Product catalog dimensions and category.
+- **Key**: `product_id` (VARCHAR(50) PK).
+- **Columns**: `product_category_name`, `product_name_lenght`, `product_description_lenght`, `product_photos_qty`, `product_weight_g`, `product_length_cm`, `product_height_cm`, `product_width_cm`.
+- **Expected Rows**: 32,951.
+
+### `raw.sellers`
+- **Description**: Marketplace sellers.
+- **Key**: `seller_id` (VARCHAR(50) PK).
+- **Columns**: `seller_zip_code_prefix`, `seller_city`, `seller_state`.
+- **Expected Rows**: 3,095.
+
+### `raw.geolocation`
+- **Description**: Brazilian zip prefix coordinate lookups.
+- **Columns**: `geolocation_zip_code_prefix` (indexed), `geolocation_lat`, `geolocation_lng`, `geolocation_city`, `geolocation_state`.
+- **Expected Rows**: 1,000,163.
+
+### `raw.category_translations`
+- **Description**: English mapping for Portuguese category names.
+- **Key**: `product_category_name` (VARCHAR(100) PK).
+- **Columns**: `product_category_name_english`.
+- **Expected Rows**: 71.
+
+---
+
+## 2. `raw_marketing` Schema (Optional Module)
+
+### `raw_marketing.mql`
+- **Key**: `mql_id` (VARCHAR(50) PK).
+- **Columns**: `first_contact_date`, `landing_page_id`, `origin`.
+- **Expected Rows**: 8,000.
+
+### `raw_marketing.closed_deals`
+- **Key**: `mql_id` (VARCHAR(50) PK).
+- **Columns**: `seller_id` (VARCHAR(50)), `sdr_id`, `sr_id`, `won_date`, `business_segment`, `lead_type`, `lead_behaviour_profile`, `has_company`, `has_gtin`, `average_stock`, `business_type`, `declared_product_catalog_size`, `declared_monthly_revenue`.
+- **Expected Rows**: 842.
+
+---
+
+## 3. Raw Helper Views
+
+- `raw.vw_delivered_orders`: Filters to delivered orders (96,478 rows), joins `customer_unique_id`, and calculates `delivery_delay_days`.
+- `raw.vw_order_revenue`: Computes order-level item count, product revenue, freight revenue, and total revenue.
+- `raw.vw_ingestion_summary`: Aggregates live row counts across all raw tables to verify ingestion completeness.
+
+---
+
+## 4. dbt Transformation Models (`staging` Schema)
+
+- `stg_customers`: Surfaces `customer_id` and `customer_unique_id`, standardizes city/state casing.
+- `stg_orders`: Filters to delivered orders, standardizes timestamp naming, adds `is_delivered` and `delivery_delay_days`.
+- `stg_order_items`: Computes item total revenue (`price + freight_value`), joins to delivered orders.
+- `stg_order_payments`: Aggregates payments to order level, computes `primary_payment_type`, `has_multiple_payment_methods`.
+- `stg_order_reviews`: Flags sentiment (`is_negative_review`, `is_positive_review`), cleans review timestamps.
+- `stg_products`: Joins English category translation, renames source typo fields into clean aliases.
+- `stg_sellers`: Standardizes city/state casing and conventions.

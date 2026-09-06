@@ -9,13 +9,21 @@
 !.env.example
 
 # ── Raw and processed datasets (never commit customer data) ───────────────────
+dataset/
 data/raw/
 data/processed/
+Brazilian\ E-Commerce-Public-Dataset-by-Olist/
+Marketing-Funnel-by-Olist/
 *.csv
 *.xlsx
 *.xls
 *.parquet
 *.feather
+
+# ── dbt build artifacts ───────────────────────────────────────────────────────
+dbt/mercury_analytics/target/
+dbt/mercury_analytics/logs/
+dbt/mercury_analytics/profiles.yml   # real credentials — use profiles.yml.example
 
 # ── ML model artifacts ────────────────────────────────────────────────────────
 ml/artifacts/

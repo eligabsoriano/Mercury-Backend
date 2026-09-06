@@ -1,0 +1,124 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: >
+      Lightly cleaned customer dimension. Exposes both customer_id (order-scoped FK)
+      and customer_unique_id (true returning-customer key). All downstream models
+      must group by customer_unique_id for customer-level metrics.
+    columns:
+      - name: customer_id
+        description: Order-scoped FK. Links to stg_orders.customer_id.
+        tests: [unique, not_null]
+      - name: customer_unique_id
+        description: True customer identifier. Use this for RFM and churn analysis.
+        tests: [not_null]
+      - name: zip_prefix
+        description: First 5 digits of Brazilian CEP.
+      - name: city
+        description: Lowercase, trimmed city name.
+      - name: state
+        description: Uppercase 2-char state abbreviation.
+
+  - name: stg_orders
+    description: >
+      Delivered orders only (96,478 rows). Renames timestamp columns and adds
+      delivery_delay_days (positive = late, negative = early).
+    columns:
+      - name: order_id
+        description: Unique order identifier.
+        tests: [unique, not_null]
+      - name: customer_id
+        description: FK to stg_customers (order-scoped).
+        tests: [not_null]
+      - name: order_status
+        description: Always 'delivered' in this model (filtered at staging).
+        tests: [not_null]
+      - name: purchased_at
+        description: UTC timestamp of purchase. Primary recency dimension.
+        tests: [not_null]
+      - name: is_delivered
+        description: Always TRUE in this model.
+      - name: delivery_delay_days
+        description: "Actual - estimated delivery in days. Positive = late."
+
+  - name: stg_order_items
+    description: >
+      Delivered order line items. Adds item_revenue = price + freight_value.
+      Only includes items from delivered orders.
+    columns:
+      - name: order_id
+        description: FK to stg_orders.
+        tests: [not_null]
+      - name: order_item_id
+        description: 1-based sequence within order.
+        tests: [not_null]
+      - name: price
+        description: Product price in BRL.
+        tests: [not_null]
+      - name: freight_value
+        description: Shipping cost in BRL.
+        tests: [not_null]
+      - name: item_revenue
+        description: price + freight_value. Total cost to customer per item.
+
+  - name: stg_order_payments
+    description: >
+      Order-level payment summary. Collapses multi-method orders into one row.
+      primary_payment_type is the method with the highest payment_value.
+    columns:
+      - name: order_id
+        description: FK to stg_orders.
+        tests: [unique, not_null]
+      - name: primary_payment_type
+        description: "Payment method with highest value: credit_card | boleto | voucher | debit_card"
+      - name: total_payment_value
+        description: Sum of all payment_value records for this order.
+      - name: has_multiple_payment_methods
+        description: TRUE if the order used more than one payment type.
+
+  - name: stg_order_reviews
+    description: >
+      Customer reviews with satisfaction flags. review_score (1–5) is used
+      as a churn feature. is_negative_review = score ≤ 2.
+    columns:
+      - name: review_id
+        description: Review identifier (part of compound key with order_id).
+        tests: [not_null]
+      - name: order_id
+        description: FK to stg_orders.
+        tests: [not_null]
+      - name: review_score
+        description: "Customer rating 1 (worst) to 5 (best)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+      - name: is_negative_review
+        description: TRUE if review_score ≤ 2.
+      - name: is_positive_review
+        description: TRUE if review_score ≥ 4.
+
+  - name: stg_products
+    description: >
+      Product catalogue with English category names joined in.
+      Column name typos from source CSV are fixed in aliases.
+    columns:
+      - name: product_id
+        description: Unique product identifier.
+        tests: [unique, not_null]
+      - name: category_name_en
+        description: English category name (falls back to Portuguese if unmapped).
+      - name: category_name_pt
+        description: Original Portuguese category name from source.
+
+  - name: stg_sellers
+    description: Seller dimension with normalised city/state casing.
+    columns:
+      - name: seller_id
+        description: Unique seller identifier.
+        tests: [unique, not_null]
+      - name: city
+        description: Lowercase, trimmed city name.
+      - name: state
+        description: Uppercase 2-char state abbreviation.

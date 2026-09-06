@@ -1,0 +1,32 @@
+name: mercury_analytics
+version: '1.0.0'
+config-version: 2
+
+# dbt profile — credentials live in profiles.yml (gitignored).
+# Copy profiles.yml.example → profiles.yml and fill in DATABASE_URL.
+profile: mercury
+
+model-paths: ["models"]
+test-paths:  ["tests"]
+macro-paths: ["macros"]
+seed-paths:  ["seeds"]
+
+target-path:  "target"
+clean-targets: ["target"]
+
+models:
+  mercury_analytics:
+    # staging: lightly cleaned raw source data
+    staging:
+      +schema:      staging
+      +materialized: view
+
+    # intermediate: business logic joins, resolves customer_unique_id
+    intermediate:
+      +schema:      intermediate
+      +materialized: view
+
+    # marts: final analytics tables consumed by FastAPI and Power BI
+    marts:
+      +schema:      mart
+      +materialized: table

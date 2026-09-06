@@ -1,210 +1,288 @@
 -- =============================================================================
--- Mercury — PostgreSQL Schema
+-- Mercury — PostgreSQL Raw Schema (Olist Dataset)
 -- =============================================================================
--- Applies to: Neon (PostgreSQL 16-compatible) and any standard PostgreSQL ≥ 12
--- Safe to re-run: all statements use IF NOT EXISTS.
--- Dependency order: countries → products → customers → orders → order_items
---                   → customer_metrics
+-- Applies to: Neon (PostgreSQL 16) and any standard PostgreSQL ≥ 14
+-- Safe to re-run: uses IF NOT EXISTS throughout.
 --
--- Design notes:
---   - TIMESTAMPTZ stores every timestamp in UTC.
---   - NUMERIC(12,4) for unit prices; NUMERIC(14,2) for aggregated money values.
---   - customer_id uses INTEGER to match the 5-digit CustomerID in Online Retail II.
---   - Generated column `revenue` avoids storing a value that can be derived,
---     while still being indexable and queryable without a join.
---   - customer_metrics is updated by the ML/RFM pipeline after ETL.
+-- Schema layout:
+--   raw            ← ingested Olist e-commerce CSVs (this file)
+--   raw_marketing  ← optional marketing funnel CSVs (separate module)
+--   staging        ← dbt staging models (created by dbt at runtime)
+--   mart           ← dbt analytics mart models (created by dbt at runtime)
+--
+-- Key design decision:
+--   customer_id in Olist is ORDER-SCOPED (one per order).
+--   customer_unique_id is the TRUE returning-customer identifier.
+--   RFM, churn, and all customer metrics must be computed on customer_unique_id.
+--
+-- Column names match the source CSVs exactly (including known dataset typos
+--   such as product_name_lenght) to make ingestion validation trivial.
 -- =============================================================================
 
 
 -- ---------------------------------------------------------------------------
--- Extension: ensure pgcrypto is available if needed later (safe to skip)
+-- PostgreSQL schemas
 -- ---------------------------------------------------------------------------
--- CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE SCHEMA IF NOT EXISTS raw;
+CREATE SCHEMA IF NOT EXISTS raw_marketing;
+-- staging and mart schemas are created automatically by dbt
 
 
 -- ===========================================================================
--- 1. countries
---    Reference table for country names sourced from the Online Retail II data.
+-- raw.customers
+-- ---------------------------------------------------------------------------
+-- One row per ORDER in Olist (not per unique customer).
+-- customer_id is order-scoped; customer_unique_id is the true customer key.
+-- Use customer_unique_id for all RFM and churn analysis.
 -- ===========================================================================
-CREATE TABLE IF NOT EXISTS countries (
-    country_id   SERIAL       PRIMARY KEY,
-    country_name VARCHAR(100) NOT NULL UNIQUE
+CREATE TABLE IF NOT EXISTS raw.customers (
+    customer_id              VARCHAR(50)  PRIMARY KEY,
+    customer_unique_id       VARCHAR(50)  NOT NULL,
+    customer_zip_code_prefix VARCHAR(10),
+    customer_city            VARCHAR(100),
+    customer_state           VARCHAR(5)
 );
 
-COMMENT ON TABLE  countries              IS 'Country reference data sourced from Online Retail II.';
-COMMENT ON COLUMN countries.country_id   IS 'Surrogate primary key.';
-COMMENT ON COLUMN countries.country_name IS 'Full country name as it appears in the raw dataset.';
+COMMENT ON TABLE  raw.customers                      IS 'Olist customers. customer_id is order-scoped; customer_unique_id is the true returning-customer key.';
+COMMENT ON COLUMN raw.customers.customer_id          IS 'Order-scoped customer identifier. One row per order, not per unique customer.';
+COMMENT ON COLUMN raw.customers.customer_unique_id   IS 'True customer identifier. Use this for all RFM and churn computations.';
+
+CREATE INDEX IF NOT EXISTS idx_raw_customers_unique_id
+    ON raw.customers(customer_unique_id);
 
 
 -- ===========================================================================
--- 2. products
---    Catalogue of distinct products identified by StockCode.
+-- raw.orders
+-- ---------------------------------------------------------------------------
+-- One row per order. order_purchase_timestamp is the primary date dimension.
+-- Only "delivered" orders are used for customer analytics (96,478 of 99,441).
 -- ===========================================================================
-CREATE TABLE IF NOT EXISTS products (
-    stock_code  VARCHAR(20)  PRIMARY KEY,
-    description TEXT,
-    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS raw.orders (
+    order_id                      VARCHAR(50)  PRIMARY KEY,
+    customer_id                   VARCHAR(50)  NOT NULL
+                                               REFERENCES raw.customers(customer_id),
+    order_status                  VARCHAR(30),
+    order_purchase_timestamp      TIMESTAMPTZ,
+    order_approved_at             TIMESTAMPTZ,
+    order_delivered_carrier_date  TIMESTAMPTZ,
+    order_delivered_customer_date TIMESTAMPTZ,
+    order_estimated_delivery_date TIMESTAMPTZ
 );
 
-COMMENT ON TABLE  products             IS 'Product catalogue derived from Online Retail II StockCode values.';
-COMMENT ON COLUMN products.stock_code  IS 'Natural product identifier from the dataset (e.g. 85123A).';
-COMMENT ON COLUMN products.description IS 'Most recent product description; may differ across invoices.';
-COMMENT ON COLUMN products.updated_at  IS 'Set by the ETL loader when description changes.';
+COMMENT ON TABLE  raw.orders                              IS 'Olist orders. Date range: 2016-09 to 2018-10. 96,478 / 99,441 orders have status=delivered.';
+COMMENT ON COLUMN raw.orders.order_status                 IS 'delivered | shipped | canceled | unavailable | invoiced | processing | created | approved';
+COMMENT ON COLUMN raw.orders.order_purchase_timestamp     IS 'Primary event timestamp — use for recency and time-series analysis.';
+COMMENT ON COLUMN raw.orders.order_delivered_customer_date IS 'Actual delivery date. NULL if not yet delivered. Used for delivery-experience features.';
+
+CREATE INDEX IF NOT EXISTS idx_raw_orders_customer
+    ON raw.orders(customer_id);
+
+CREATE INDEX IF NOT EXISTS idx_raw_orders_status
+    ON raw.orders(order_status);
+
+CREATE INDEX IF NOT EXISTS idx_raw_orders_purchase_ts
+    ON raw.orders(order_purchase_timestamp);
 
 
 -- ===========================================================================
--- 3. customers
---    One row per unique CustomerID observed in clean transaction data.
+-- raw.order_items
+-- ---------------------------------------------------------------------------
+-- One row per item per order. Composite PK: (order_id, order_item_id).
+-- Revenue per item = price + freight_value.
 -- ===========================================================================
-CREATE TABLE IF NOT EXISTS customers (
-    customer_id    INTEGER      PRIMARY KEY,
-    country_id     INTEGER      REFERENCES countries(country_id) ON DELETE SET NULL,
-    first_order_at TIMESTAMPTZ,
-    last_order_at  TIMESTAMPTZ,
-    created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS raw.order_items (
+    order_id            VARCHAR(50)   NOT NULL
+                                      REFERENCES raw.orders(order_id),
+    order_item_id       INTEGER       NOT NULL,   -- 1-based item sequence within order
+    product_id          VARCHAR(50),
+    seller_id           VARCHAR(50),
+    shipping_limit_date TIMESTAMPTZ,
+    price               NUMERIC(12,2) NOT NULL CHECK (price >= 0),
+    freight_value       NUMERIC(12,2) NOT NULL CHECK (freight_value >= 0),
+    PRIMARY KEY (order_id, order_item_id)
 );
 
-COMMENT ON TABLE  customers               IS 'One row per distinct customer observed in cleaned transaction data.';
-COMMENT ON COLUMN customers.customer_id   IS '5-digit CustomerID from the Online Retail II dataset.';
-COMMENT ON COLUMN customers.country_id    IS 'Most frequent country for this customer (set by ETL).';
-COMMENT ON COLUMN customers.first_order_at IS 'Earliest valid invoice date for this customer.';
-COMMENT ON COLUMN customers.last_order_at  IS 'Most recent valid invoice date; used for recency calculation.';
+COMMENT ON TABLE  raw.order_items              IS 'Line items per order. Revenue = price + freight_value.';
+COMMENT ON COLUMN raw.order_items.price        IS 'Product price in BRL (excluding freight).';
+COMMENT ON COLUMN raw.order_items.freight_value IS 'Shipping cost in BRL.';
 
-CREATE INDEX IF NOT EXISTS idx_customers_country
-    ON customers(country_id);
+CREATE INDEX IF NOT EXISTS idx_raw_order_items_product
+    ON raw.order_items(product_id);
 
-CREATE INDEX IF NOT EXISTS idx_customers_last_order
-    ON customers(last_order_at);
+CREATE INDEX IF NOT EXISTS idx_raw_order_items_seller
+    ON raw.order_items(seller_id);
 
 
 -- ===========================================================================
--- 4. orders
---    Invoice-level transaction header.  One row per unique Invoice number.
---    Cancelled invoices (Invoice starting with 'C') are excluded by ETL.
+-- raw.order_payments
+-- ---------------------------------------------------------------------------
+-- One row per payment installment. Composite PK: (order_id, payment_sequential).
+-- Orders can have multiple payment methods (e.g., credit card + voucher).
 -- ===========================================================================
-CREATE TABLE IF NOT EXISTS orders (
-    invoice      VARCHAR(20)  PRIMARY KEY,
-    customer_id  INTEGER      NOT NULL REFERENCES customers(customer_id) ON DELETE CASCADE,
-    country_id   INTEGER      REFERENCES countries(country_id) ON DELETE SET NULL,
-    invoice_date TIMESTAMPTZ  NOT NULL,
-    is_cancelled BOOLEAN      NOT NULL DEFAULT FALSE,
-    created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS raw.order_payments (
+    order_id              VARCHAR(50)   NOT NULL
+                                        REFERENCES raw.orders(order_id),
+    payment_sequential    INTEGER       NOT NULL,
+    payment_type          VARCHAR(30),   -- credit_card | boleto | voucher | debit_card
+    payment_installments  INTEGER,
+    payment_value         NUMERIC(12,2),
+    PRIMARY KEY (order_id, payment_sequential)
 );
 
-COMMENT ON TABLE  orders              IS 'Invoice-level transaction header; one row per Invoice.';
-COMMENT ON COLUMN orders.invoice      IS 'Invoice identifier (e.g. 536365). Cancelled invoices begin with C.';
-COMMENT ON COLUMN orders.is_cancelled IS 'TRUE if the original invoice begins with C (cancelled order).';
-COMMENT ON COLUMN orders.invoice_date IS 'UTC-normalised InvoiceDate from the dataset.';
+COMMENT ON TABLE  raw.order_payments                 IS 'Payment records per order. Multiple rows per order when multiple payment methods are used.';
+COMMENT ON COLUMN raw.order_payments.payment_type    IS 'credit_card | boleto | voucher | debit_card | not_defined';
+COMMENT ON COLUMN raw.order_payments.payment_value   IS 'Amount paid for this payment record in BRL.';
 
-CREATE INDEX IF NOT EXISTS idx_orders_customer
-    ON orders(customer_id);
+CREATE INDEX IF NOT EXISTS idx_raw_order_payments_order
+    ON raw.order_payments(order_id);
 
-CREATE INDEX IF NOT EXISTS idx_orders_invoice_date
-    ON orders(invoice_date);
-
-CREATE INDEX IF NOT EXISTS idx_orders_customer_date
-    ON orders(customer_id, invoice_date);
+CREATE INDEX IF NOT EXISTS idx_raw_order_payments_type
+    ON raw.order_payments(payment_type);
 
 
 -- ===========================================================================
--- 5. order_items
---    Line-item detail for each invoice.  One row per (Invoice, StockCode)
---    combination after ETL deduplication.
---    revenue is a generated stored column: quantity * unit_price.
+-- raw.order_reviews
+-- ---------------------------------------------------------------------------
+-- One row per review. review_id is the PK.
+-- review_score (1–5) is used as a customer-experience feature in churn models.
 -- ===========================================================================
-CREATE TABLE IF NOT EXISTS order_items (
-    item_id    BIGSERIAL     PRIMARY KEY,
-    invoice    VARCHAR(20)   NOT NULL REFERENCES orders(invoice) ON DELETE CASCADE,
-    stock_code VARCHAR(20)   NOT NULL REFERENCES products(stock_code),
-    quantity   INTEGER       NOT NULL CHECK (quantity <> 0),
-    unit_price NUMERIC(12,4) NOT NULL CHECK (unit_price >= 0),
-    revenue    NUMERIC(14,4) GENERATED ALWAYS AS (quantity * unit_price) STORED,
-    created_at TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS raw.order_reviews (
+    review_id              VARCHAR(50)  NOT NULL,
+    order_id               VARCHAR(50)  NOT NULL
+                                        REFERENCES raw.orders(order_id),
+    review_score           SMALLINT     CHECK (review_score BETWEEN 1 AND 5),
+    review_comment_title   TEXT,
+    review_comment_message TEXT,
+    review_creation_date   TIMESTAMPTZ,
+    review_answer_timestamp TIMESTAMPTZ,
+    PRIMARY KEY (review_id, order_id)
 );
 
-COMMENT ON TABLE  order_items            IS 'Line-item detail per invoice. Revenue is derived from quantity × unit_price.';
-COMMENT ON COLUMN order_items.item_id    IS 'Surrogate key; no natural composite key is reliable in the raw dataset.';
-COMMENT ON COLUMN order_items.quantity   IS 'Units sold. ETL excludes zero-quantity rows.';
-COMMENT ON COLUMN order_items.unit_price IS 'Price per unit in GBP; zero-price items (gifts/samples) are allowed.';
-COMMENT ON COLUMN order_items.revenue    IS 'Generated stored column: quantity × unit_price. Updated automatically on INSERT.';
+COMMENT ON TABLE  raw.order_reviews             IS 'Customer reviews. review_score (1–5) is a customer satisfaction signal used in churn feature engineering.';
+COMMENT ON COLUMN raw.order_reviews.review_score IS '1=worst … 5=best. Distribution: 5→57k, 4→19k, 1→11k, 3→8k, 2→3k.';
 
-CREATE INDEX IF NOT EXISTS idx_order_items_invoice
-    ON order_items(invoice);
+CREATE INDEX IF NOT EXISTS idx_raw_order_reviews_order
+    ON raw.order_reviews(order_id);
 
-CREATE INDEX IF NOT EXISTS idx_order_items_stock_code
-    ON order_items(stock_code);
-
-CREATE INDEX IF NOT EXISTS idx_order_items_invoice_stock
-    ON order_items(invoice, stock_code);
+CREATE INDEX IF NOT EXISTS idx_raw_order_reviews_score
+    ON raw.order_reviews(review_score);
 
 
 -- ===========================================================================
--- 6. customer_metrics
---    One row per customer.  Populated and refreshed by the ML/RFM pipeline.
---    All RFM, churn, and revenue-at-risk values live here.
+-- raw.products
+-- ---------------------------------------------------------------------------
+-- One row per product. Column names match CSV exactly (including typos).
 -- ===========================================================================
-CREATE TABLE IF NOT EXISTS customer_metrics (
-    customer_id             INTEGER       PRIMARY KEY
-                                          REFERENCES customers(customer_id) ON DELETE CASCADE,
-
-    -- ── RFM base metrics ─────────────────────────────────────────────────────
-    recency_days            INTEGER,                           -- days since last invoice
-    frequency               INTEGER,                           -- distinct invoice count
-    monetary                NUMERIC(14,2),                     -- total spend (GBP)
-
-    -- ── RFM scores and segment ───────────────────────────────────────────────
-    rfm_r_score             SMALLINT      CHECK (rfm_r_score BETWEEN 1 AND 5),
-    rfm_f_score             SMALLINT      CHECK (rfm_f_score BETWEEN 1 AND 5),
-    rfm_m_score             SMALLINT      CHECK (rfm_m_score BETWEEN 1 AND 5),
-    rfm_segment             VARCHAR(50),   -- e.g. 'VIP', 'At Risk', 'Lost'
-
-    -- ── Churn model output ───────────────────────────────────────────────────
-    churn_probability       NUMERIC(6,5)  CHECK (churn_probability BETWEEN 0 AND 1),
-    is_churned              BOOLEAN,       -- TRUE if labelled churned in training data
-
-    -- ── Revenue at risk ──────────────────────────────────────────────────────
-    revenue_at_risk         NUMERIC(14,2), -- monetary × churn_probability
-
-    -- ── ML feature snapshot (for auditability and API exposure) ──────────────
-    avg_order_value         NUMERIC(12,2),
-    purchase_frequency      NUMERIC(10,4), -- orders per month or per week
-    unique_products         INTEGER,
-    return_rate             NUMERIC(6,5)  CHECK (return_rate BETWEEN 0 AND 1),
-    avg_days_between_orders NUMERIC(10,2),
-    total_items             INTEGER,
-    last_order_date         TIMESTAMPTZ,
-
-    -- ── Audit timestamps ─────────────────────────────────────────────────────
-    computed_at             TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
-    updated_at              TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS raw.products (
+    product_id                   VARCHAR(50)  PRIMARY KEY,
+    product_category_name        VARCHAR(100),
+    product_name_lenght          INTEGER,      -- typo preserved from source CSV
+    product_description_lenght   INTEGER,      -- typo preserved from source CSV
+    product_photos_qty           INTEGER,
+    product_weight_g             INTEGER,
+    product_length_cm            INTEGER,
+    product_height_cm            INTEGER,
+    product_width_cm             INTEGER
 );
 
-COMMENT ON TABLE  customer_metrics                    IS 'Aggregated customer analytics. Refreshed by the RFM and churn ML pipeline.';
-COMMENT ON COLUMN customer_metrics.recency_days       IS 'Days between the reference date and the customer''s last invoice.';
-COMMENT ON COLUMN customer_metrics.frequency          IS 'Number of distinct valid invoices.';
-COMMENT ON COLUMN customer_metrics.monetary           IS 'Sum of all line-item revenue in GBP.';
-COMMENT ON COLUMN customer_metrics.rfm_r_score        IS 'Recency quintile score (5 = most recent).';
-COMMENT ON COLUMN customer_metrics.rfm_f_score        IS 'Frequency quintile score (5 = highest frequency).';
-COMMENT ON COLUMN customer_metrics.rfm_m_score        IS 'Monetary quintile score (5 = highest spend).';
-COMMENT ON COLUMN customer_metrics.rfm_segment        IS 'Named segment derived from RFM scores (VIP, Loyal, At Risk, etc.).';
-COMMENT ON COLUMN customer_metrics.churn_probability  IS 'Model-predicted probability of churn in [0, 1].';
-COMMENT ON COLUMN customer_metrics.is_churned         IS 'Ground-truth churn label used during model training.';
-COMMENT ON COLUMN customer_metrics.revenue_at_risk    IS 'monetary × churn_probability: projected revenue loss.';
-COMMENT ON COLUMN customer_metrics.return_rate        IS 'Fraction of line items with negative quantity (returns/cancellations).';
-COMMENT ON COLUMN customer_metrics.computed_at        IS 'Timestamp when this row was first computed.';
-COMMENT ON COLUMN customer_metrics.updated_at         IS 'Timestamp of the most recent pipeline refresh.';
+COMMENT ON TABLE  raw.products                          IS 'Product catalogue. Column typos (lenght) are preserved from the source CSV intentionally.';
+COMMENT ON COLUMN raw.products.product_category_name   IS 'Portuguese category name. Join to raw.category_translations for English.';
+COMMENT ON COLUMN raw.products.product_name_lenght     IS 'Character count of product name (typo in source: "lenght" = "length").';
 
--- Indexes to support FastAPI query patterns and BI dashboard filters
-CREATE INDEX IF NOT EXISTS idx_cm_rfm_segment
-    ON customer_metrics(rfm_segment);
+CREATE INDEX IF NOT EXISTS idx_raw_products_category
+    ON raw.products(product_category_name);
 
-CREATE INDEX IF NOT EXISTS idx_cm_churn_probability
-    ON customer_metrics(churn_probability DESC);
 
-CREATE INDEX IF NOT EXISTS idx_cm_revenue_at_risk
-    ON customer_metrics(revenue_at_risk DESC);
+-- ===========================================================================
+-- raw.sellers
+-- ---------------------------------------------------------------------------
+-- One row per seller. 3,095 sellers in the dataset.
+-- ===========================================================================
+CREATE TABLE IF NOT EXISTS raw.sellers (
+    seller_id              VARCHAR(50)  PRIMARY KEY,
+    seller_zip_code_prefix VARCHAR(10),
+    seller_city            VARCHAR(100),
+    seller_state           VARCHAR(5)
+);
 
-CREATE INDEX IF NOT EXISTS idx_cm_is_churned
-    ON customer_metrics(is_churned);
+COMMENT ON TABLE raw.sellers IS 'Seller dimension. 3,095 sellers in the dataset.';
+
+
+-- ===========================================================================
+-- raw.geolocation
+-- ---------------------------------------------------------------------------
+-- Multiple rows per zip code prefix (lat/lng approximations).
+-- No PRIMARY KEY — zip prefix appears many times with slight coord variations.
+-- ===========================================================================
+CREATE TABLE IF NOT EXISTS raw.geolocation (
+    geolocation_zip_code_prefix VARCHAR(10) NOT NULL,
+    geolocation_lat             NUMERIC(10,6),
+    geolocation_lng             NUMERIC(10,6),
+    geolocation_city            VARCHAR(100),
+    geolocation_state           VARCHAR(5)
+);
+
+COMMENT ON TABLE  raw.geolocation                         IS 'Geolocation reference. 1M rows — many lat/lng per zip. Average to get centroid per zip for mapping.';
+COMMENT ON COLUMN raw.geolocation.geolocation_zip_code_prefix IS 'First 5 digits of Brazilian CEP. Not unique — average coordinates per prefix for joins.';
+
+CREATE INDEX IF NOT EXISTS idx_raw_geolocation_zip
+    ON raw.geolocation(geolocation_zip_code_prefix);
+
+
+-- ===========================================================================
+-- raw.category_translations
+-- ---------------------------------------------------------------------------
+-- 71 rows mapping Portuguese product category names to English.
+-- ===========================================================================
+CREATE TABLE IF NOT EXISTS raw.category_translations (
+    product_category_name         VARCHAR(100) PRIMARY KEY,
+    product_category_name_english VARCHAR(100)
+);
+
+COMMENT ON TABLE raw.category_translations IS '71 PT→EN product category name translations.';
+
+
+-- ===========================================================================
+-- OPTIONAL MODULE — raw_marketing schema
+-- ===========================================================================
+-- The marketing funnel dataset is SELLER-CENTRIC, not customer-centric.
+-- It tracks how Olist acquired sellers, not how customers shop.
+-- Included as a separate optional analytical module.
+-- ===========================================================================
+
+-- raw_marketing.mql
+-- Marketing qualified leads (8,000 rows: organic, paid, social, etc.)
+CREATE TABLE IF NOT EXISTS raw_marketing.mql (
+    mql_id            VARCHAR(50)  PRIMARY KEY,
+    first_contact_date DATE,
+    landing_page_id   VARCHAR(100),
+    origin            VARCHAR(50)   -- organic_search | paid_search | social | direct_traffic | email | referral | display | other | unknown
+);
+
+COMMENT ON TABLE  raw_marketing.mql        IS 'Marketing qualified leads. Seller acquisition funnel — NOT customer-facing.';
+COMMENT ON COLUMN raw_marketing.mql.origin IS 'Acquisition channel: organic_search | paid_search | social | direct_traffic | email | referral | display | other | unknown';
+
+-- raw_marketing.closed_deals
+-- Leads that converted to active sellers (842 rows)
+CREATE TABLE IF NOT EXISTS raw_marketing.closed_deals (
+    mql_id                        VARCHAR(50)  PRIMARY KEY
+                                               REFERENCES raw_marketing.mql(mql_id),
+    seller_id                     VARCHAR(50),
+    sdr_id                        VARCHAR(50),
+    sr_id                         VARCHAR(50),
+    won_date                      DATE,
+    business_segment              VARCHAR(100),
+    lead_type                     VARCHAR(100),
+    lead_behaviour_profile        VARCHAR(100),
+    has_company                   BOOLEAN,
+    has_gtin                      BOOLEAN,
+    average_stock                 VARCHAR(50),
+    business_type                 VARCHAR(100),
+    declared_product_catalog_size NUMERIC(12,2),
+    declared_monthly_revenue      NUMERIC(14,2)
+);
+
+COMMENT ON TABLE  raw_marketing.closed_deals IS 'MQLs that converted to active Olist sellers (842 of 8,000 leads). Links to raw.sellers via seller_id.';
+
+CREATE INDEX IF NOT EXISTS idx_raw_mktg_deals_seller
+    ON raw_marketing.closed_deals(seller_id);

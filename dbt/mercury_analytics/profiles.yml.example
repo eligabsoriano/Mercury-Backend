@@ -1,0 +1,38 @@
+# =============================================================================
+# Mercury dbt Profile — Example
+# =============================================================================
+# Copy this file to profiles.yml (same directory) and fill in your real values.
+# profiles.yml is gitignored — never commit it.
+#
+# To use this profile:
+#   1. cp dbt/mercury_analytics/profiles.yml.example dbt/mercury_analytics/profiles.yml
+#   2. Fill in your DATABASE_URL components below
+#   3. Run: cd dbt/mercury_analytics && dbt debug --profiles-dir .
+# =============================================================================
+
+mercury:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host:     your-neon-host.neon.tech      # e.g. ep-twilight-math-xxxxx.neon.tech
+      port:     5432
+      user:     your_db_user                  # e.g. neondb_owner
+      password: your_db_password              # from Neon dashboard
+      dbname:   neondb                        # your Neon database name
+      schema:   staging                       # dbt default write schema
+      sslmode:  require
+      connect_timeout: 30
+      threads:  4
+
+    prod:
+      type: postgres
+      host:     your-neon-host.neon.tech
+      port:     5432
+      user:     your_db_user
+      password: your_db_password
+      dbname:   neondb
+      schema:   staging
+      sslmode:  require
+      connect_timeout: 30
+      threads:  4

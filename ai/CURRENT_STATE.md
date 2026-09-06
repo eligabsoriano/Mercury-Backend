@@ -2,44 +2,52 @@
 
 Snapshot date: 2026-09-06.
 
-## Phase 2 — PostgreSQL Schema (✅ Complete)
+---
 
-| File | Purpose |
-|------|---------|
-| `sql/schema.sql` | DDL for 6 tables with FK constraints, CHECK constraints, NUMERIC money types, TIMESTAMPTZ, and 10 indexes |
-| `sql/views.sql`  | 5 analytical views: `vw_customer_revenue`, `vw_rfm_base`, `vw_at_risk_customers`, `vw_segment_summary`, `vw_revenue_at_risk_summary` |
-| `sql/migrate.py` | Re-runnable migration runner: loads `.env`, connects via psycopg2, applies schema + views in one transaction, verifies result |
+## What Has Been Completed
 
-> **Task 2.5 (live migration)** requires your Neon `DATABASE_URL` in `.env`. Run `python sql/migrate.py` after filling in `.env`.
+### 1. Requirements & Scaffolding
+- Added `dbt-postgres` to `requirements.txt` and installed into `.venv`.
+- Configured `.gitignore` to protect datasets (`Brazilian E-Commerce-Public-Dataset-by-Olist`, `Marketing-Funnel-by-Olist`, `data/`), local credentials, and dbt build outputs (`target/`, `logs/`, `profiles.yml`).
+- Initialized core folder structures (`backend/`, `data/`, `dbt/`, `etl/`, `ml/`, `sql/`, `tests/`, `notebooks/`).
 
-## Phase 1 — Scaffolding (✅ Complete)
+### 2. PostgreSQL Schema & Migration (Olist Dataset)
+- `sql/schema.sql`: DDL for 9 raw e-commerce tables + 2 raw marketing tables with appropriate column types, keys, and indexes.
+- `sql/views.sql`: Raw helper views (`raw.vw_delivered_orders`, `raw.vw_order_revenue`, `raw.vw_ingestion_summary`).
+- `sql/migrate.py`: Fully transactional migration runner that cleans old legacy tables, creates `raw` and `raw_marketing` schemas, and verifies schema object presence.
+- **Verified on Neon Database**: Migration successfully executed. All 11 tables and 3 views exist on the live Neon PostgreSQL instance.
 
-The following files and directories were created as part of Phase 1:
+### 3. dbt Scaffolding (`dbt/mercury_analytics`)
+- Created dbt project configured for PostgreSQL (`staging` and `mart` schemas).
+- Configured `sources.yml` covering all raw tables and data types.
+- Implemented 7 staging models:
+  - `stg_customers`: Resolves `customer_id` and `customer_unique_id`.
+  - `stg_orders`: Filters delivered orders and derives `delivery_delay_days`.
+  - `stg_order_items`: Computes line-item total revenue (`price + freight_value`).
+  - `stg_order_payments`: Aggregates order-level payment structures.
+  - `stg_order_reviews`: Flags positive/negative review sentiment.
+  - `stg_products`: Enriches with English category translations and clean dimensions.
+  - `stg_sellers`: Standardizes city and state names.
+- Configured `schema.yml` with documentation and 54 generic tests.
+- **Verified**: `dbt debug` and `dbt parse` completed successfully with live database connection.
 
-| Path | Purpose |
-|------|---------|
-| `requirements.txt` | Pinned Python dependencies (pandas, psycopg2, scikit-learn, FastAPI, pytest, httpx) |
-| `.env.example` | Environment variable reference — copy to `.env` and fill in values |
-| `.gitignore` | Protects `.env`, `data/`, `ml/artifacts/`, `*.pkl`, `__pycache__/`, etc. |
-| `etl/` | ETL pipeline directory (implementation starts Phase 3) |
-| `sql/` | SQL schema and queries directory (implementation starts Phase 2) |
-| `ml/artifacts/` | ML model artifact directory (gitignored) |
-| `backend/routers/` | FastAPI route handlers directory |
-| `backend/schemas/` | Pydantic model directory |
-| `backend/services/` | Business logic and DB query layer |
-| `notebooks/` | Exploratory analysis |
-| `tests/` | Pytest suite |
-| `data/raw/` | Raw dataset (gitignored — never commit) |
-| `data/processed/` | ETL output (gitignored) |
+### 4. Raw Data Ingestion (ETL) & Verification (✅ Complete)
+- Implemented `etl/ingest.py` using PostgreSQL `COPY` streaming with dependency-ordered loading and automatic schema truncation.
+- Loaded all 11 tables (1,559,723 rows total) across `raw.*` and `raw_marketing.*` into Neon.
+- Verified live counts via `raw.vw_ingestion_summary`.
 
-## Verified Runtime State
+### 5. dbt Staging Materialization & Testing (✅ Complete)
+- Created `generate_schema_name.sql` macro to materialize staging models directly in `staging.*`.
+- Materialized 7 staging views in `staging.*` (`dbt run --select staging`).
+- Executed full test suite (`dbt test --select staging`): **53 out of 53 tests passed** (0 errors, 0 warnings).
 
-- Python 3.13.5 confirmed on host machine.
-- No runtime backend, frontend, trained model, database connection, or deployment has been verified in this checkout.
-- All directories contain `.gitkeep` files so git tracks the structure before implementation code is added.
+### 6. Project Documentation (✅ Complete)
+- Updated `README.md` from `up.md`.
+- Rewrote `docs/architecture.md` and `docs/methodology.md` for Olist.
+- Synchronized all `ai/` context files.
 
-## Next Phase
+---
 
-**Phase 2 — PostgreSQL Schema**: Write `sql/schema.sql`, `sql/views.sql`, and `sql/migrate.py`.
-
-Treat planned endpoints, directories, and capabilities as design guidance until source code and focused validation exist.
+## Next Phase: Phase 4 — dbt Intermediate & Analytics Marts
+- Build `intermediate/int_customer_orders.sql`: Customer-level rollup aggregating order history, dates, and order values by `customer_unique_id`.
+- Build `marts/mart_customer_metrics.sql`: Final analytics table calculating RFM metrics (Recency days, Frequency, Monetary spend, AOV), customer delivery friction signals, and review sentiment scores ready for ML churn training and FastAPI serving.

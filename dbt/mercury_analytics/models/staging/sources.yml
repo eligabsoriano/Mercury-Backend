@@ -1,0 +1,172 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Raw Olist Brazilian E-Commerce data ingested directly from CSV files.
+      All tables in the raw PostgreSQL schema match source CSV columns exactly.
+    schema: raw
+    tables:
+      - name: customers
+        description: >
+          Order-scoped customer records. IMPORTANT: customer_id is unique per order,
+          not per unique customer. Use customer_unique_id for all customer-level analysis.
+        columns:
+          - name: customer_id
+            description: Order-scoped customer identifier (PK). One per order.
+            tests: [unique, not_null]
+          - name: customer_unique_id
+            description: True returning-customer identifier. Use for RFM and churn.
+            tests: [not_null]
+          - name: customer_zip_code_prefix
+            description: First 5 digits of the customer's Brazilian CEP postal code.
+          - name: customer_city
+            description: Customer city name.
+          - name: customer_state
+            description: Brazilian state abbreviation (2 chars).
+
+      - name: orders
+        description: >
+          One row per order. Only delivered orders (96,478 of 99,441) are used
+          for customer analytics. Date range: 2016-09 to 2018-10.
+        columns:
+          - name: order_id
+            description: Unique order identifier (PK).
+            tests: [unique, not_null]
+          - name: customer_id
+            description: FK to raw.customers (order-scoped).
+            tests:
+              - not_null
+              - relationships:
+                  to: source('raw', 'customers')
+                  field: customer_id
+          - name: order_status
+            description: "delivered | shipped | canceled | unavailable | invoiced | processing | created | approved"
+            tests:
+              - not_null
+              - accepted_values:
+                  values: [delivered, shipped, canceled, unavailable, invoiced, processing, created, approved]
+          - name: order_purchase_timestamp
+            description: UTC timestamp of purchase. Primary date dimension for recency.
+            tests: [not_null]
+          - name: order_delivered_customer_date
+            description: Actual delivery date. NULL for non-delivered orders.
+
+      - name: order_items
+        description: >
+          Line items per order. Composite PK (order_id, order_item_id).
+          Revenue per item = price + freight_value.
+        columns:
+          - name: order_id
+            description: FK to raw.orders.
+            tests: [not_null]
+          - name: order_item_id
+            description: 1-based item sequence within the order.
+            tests: [not_null]
+          - name: product_id
+            description: FK to raw.products.
+          - name: seller_id
+            description: FK to raw.sellers.
+          - name: price
+            description: Product price in BRL (excluding freight).
+            tests: [not_null]
+          - name: freight_value
+            description: Shipping cost in BRL.
+            tests: [not_null]
+
+      - name: order_payments
+        description: >
+          Payment records. Composite PK (order_id, payment_sequential).
+          One order may have multiple payment methods.
+        columns:
+          - name: order_id
+            description: FK to raw.orders.
+            tests: [not_null]
+          - name: payment_sequential
+            description: Sequence number within order (1-based).
+            tests: [not_null]
+          - name: payment_type
+            description: "credit_card | boleto | voucher | debit_card | not_defined"
+          - name: payment_value
+            description: Amount paid for this record in BRL.
+
+      - name: order_reviews
+        description: >
+          Customer reviews linked to orders. review_score (1–5) is used as a
+          satisfaction/churn feature. Distribution: 5→57k, 4→19k, 1→11k, 3→8k, 2→3k.
+        columns:
+          - name: review_id
+            description: Review identifier (part of compound PK with order_id).
+            tests: [not_null]
+          - name: order_id
+            description: FK to raw.orders.
+            tests: [not_null]
+          - name: review_score
+            description: Customer satisfaction score 1 (worst) to 5 (best).
+            tests:
+              - not_null
+              - accepted_values:
+                  values: [1, 2, 3, 4, 5]
+
+      - name: products
+        description: >
+          Product catalogue. 32,951 products. Column name typos
+          (product_name_lenght, product_description_lenght) preserved from source CSV.
+        columns:
+          - name: product_id
+            description: Unique product identifier (PK).
+            tests: [unique, not_null]
+          - name: product_category_name
+            description: Portuguese category name. Join to category_translations for English.
+
+      - name: sellers
+        description: Seller dimension. 3,095 sellers.
+        columns:
+          - name: seller_id
+            description: Unique seller identifier (PK).
+            tests: [unique, not_null]
+
+      - name: geolocation
+        description: >
+          Brazilian zip-code geolocation reference. 1M rows — multiple lat/lng
+          per zip prefix. Average coordinates per prefix to get centroid for joins.
+        columns:
+          - name: geolocation_zip_code_prefix
+            description: First 5 digits of the Brazilian CEP. Not unique.
+            tests: [not_null]
+
+      - name: category_translations
+        description: 71 rows mapping Portuguese category names to English.
+        columns:
+          - name: product_category_name
+            description: Portuguese category name (PK).
+            tests: [unique, not_null]
+          - name: product_category_name_english
+            description: English category name.
+
+  - name: raw_marketing
+    description: >
+      Optional seller acquisition marketing funnel data from Olist.
+      This is SELLER-CENTRIC, not customer-centric, and is treated as a
+      separate optional analytical module.
+    schema: raw_marketing
+    tables:
+      - name: mql
+        description: Marketing qualified leads (8,000 rows). Seller acquisition funnel.
+        columns:
+          - name: mql_id
+            description: Unique MQL identifier (PK).
+            tests: [unique, not_null]
+          - name: origin
+            description: "Acquisition channel: organic_search | paid_search | social | direct_traffic | email | referral | display | other | unknown"
+
+      - name: closed_deals
+        description: >
+          MQLs that converted to active sellers (842 of 8,000).
+          Links to raw.sellers via seller_id (380 of 842 match).
+        columns:
+          - name: mql_id
+            description: FK to raw_marketing.mql (PK).
+            tests: [unique, not_null]
+          - name: seller_id
+            description: FK to raw.sellers. Only 380 of 842 match sellers table.
