@@ -46,8 +46,21 @@ Snapshot date: 2026-09-06.
 - Rewrote `docs/architecture.md` and `docs/methodology.md` for Olist.
 - Synchronized all `ai/` context files.
 
+### 7. dbt Intermediate & Analytics Marts (Phase 4 — ✅ Complete)
+- Built order-level aggregations (`int_order_items_aggregated`, `int_order_reviews_aggregated`) to eliminate multi-item Cartesian fan-out.
+- Built customer-level rollups (`int_customer_locations`, `int_customer_orders`, `int_customer_fulfillment`, `int_customer_reviews`) strictly on `customer_unique_id`.
+- Materialized 3 mart tables in `mart.*`:
+  - `mart.dim_customers`: 93,358 rows (unique delivered customers, deterministic location, tenure).
+  - `mart.fact_orders`: 96,478 rows (delivered orders with payments, items, reviews, delivery delays).
+  - `mart.mart_customer_metrics`: 93,358 rows (central Customer Intelligence table with RFM base, `recency_days`, AOV, delivery friction, and review sentiment).
+- Validated with **95 out of 95 dbt tests passing** (`PASS=95 WARN=0 ERROR=0`).
+- Validated with **19 out of 19 pytest tests passing** (`tests/test_dbt_models.py`, `tests/test_database_schema.py`, `tests/test_etl_ingestion.py`).
+
 ---
 
-## Next Phase: Phase 4 — dbt Intermediate & Analytics Marts
-- Build `intermediate/int_customer_orders.sql`: Customer-level rollup aggregating order history, dates, and order values by `customer_unique_id`.
-- Build `marts/mart_customer_metrics.sql`: Final analytics table calculating RFM metrics (Recency days, Frequency, Monetary spend, AOV), customer delivery friction signals, and review sentiment scores ready for ML churn training and FastAPI serving.
+## Next Phase: Phase 5 — RFM Customer Segmentation (Analytics Layer)
+- Implement `ml/rfm.py` to query `mart.mart_customer_metrics`.
+- Score Recency ($R$) and Monetary ($M$) quintiles (1–5).
+- Apply tailored e-commerce Frequency ($F$) logic ($F=1$ vs $F \ge 2$).
+- Assign customer segments: Champions, Loyal Customers, Potential Loyalists, At Risk, Lost, New Customers.
+- Materialize or persist RFM segment labels back to PostgreSQL for ML churn modeling and API serving.

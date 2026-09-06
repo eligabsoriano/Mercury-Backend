@@ -111,3 +111,41 @@ Transformation: dbt (`dbt/mercury_analytics/`)
 - `stg_order_reviews`: Flags sentiment (`is_negative_review`, `is_positive_review`), cleans review timestamps.
 - `stg_products`: Joins English category translation, renames source typo fields into clean aliases.
 - `stg_sellers`: Standardizes city/state casing and conventions.
+
+---
+
+## 5. dbt Transformation Models (`intermediate` Schema)
+
+- `int_order_items_aggregated`: Order-level rollup of item counts, product revenue, freight revenue, and variety.
+- `int_order_reviews_aggregated`: Order-level rollup of customer review ratings and positive/negative sentiment flags.
+- `int_customer_locations`: Resolves a single, deterministic primary address per `customer_unique_id` based on most recent order.
+- `int_customer_orders`: Rollup of all completed orders per `customer_unique_id` (`first_purchased_at`, `latest_purchased_at`, `lifetime_orders`, `lifetime_spend`, `avg_order_value`).
+- `int_customer_fulfillment`: Fulfillment delay and friction metrics per `customer_unique_id` (`avg_delivery_delay_days`, `late_orders_count`, `late_order_ratio`, `has_late_delivery`).
+- `int_customer_reviews`: Customer satisfaction feedback per `customer_unique_id` (`total_reviews_submitted`, `avg_review_score`, `negative_reviews_count`, `has_negative_review`).
+
+---
+
+## 6. dbt Analytics Marts (`mart` Schema — Tables)
+
+### `mart.mart_customer_metrics` (93,358 rows)
+- **Description**: Central Customer Intelligence table aggregated strictly by `customer_unique_id`.
+- **Key**: `customer_unique_id` (VARCHAR PK).
+- **Core Columns**:
+  - Profile: `city`, `state`, `zip_prefix`.
+  - Recency: `first_purchased_at`, `latest_purchased_at`, `recency_days`, `customer_lifespan_days`.
+  - Frequency: `lifetime_orders`, `is_repeat_buyer`.
+  - Monetary: `lifetime_spend`, `lifetime_product_spend`, `lifetime_freight_spend`, `avg_order_value`.
+  - Basket: `lifetime_items`, `avg_items_per_order`, `total_unique_products_purchased`, `total_unique_sellers_contacted`.
+  - Fulfillment: `avg_delivery_delay_days`, `max_delivery_delay_days`, `late_orders_count`, `late_order_ratio`, `has_late_delivery`.
+  - Sentiment: `total_reviews_submitted`, `avg_review_score`, `negative_reviews_count`, `positive_reviews_count`, `has_negative_review`, `negative_review_ratio`.
+
+### `mart.dim_customers` (93,358 rows)
+- **Description**: Dimension table for Power BI and analytical drilldowns.
+- **Key**: `customer_unique_id` (VARCHAR PK).
+- **Columns**: `city`, `state`, `zip_prefix`, `first_purchased_at`, `latest_purchased_at`, `lifetime_orders`, `is_repeat_buyer`, `customer_tenure_days`.
+
+### `mart.fact_orders` (96,478 rows)
+- **Description**: Star-schema order fact table connecting order lifecycle, items, payments, and reviews.
+- **Key**: `order_id` (VARCHAR PK).
+- **Foreign Keys**: `customer_id` (stg_customers), `customer_unique_id` (dim_customers).
+- **Columns**: Status, timestamps, `delivery_delay_days`, `is_late_delivery`, `item_count`, `total_revenue`, `total_payment_value`, `primary_payment_type`, `avg_review_score`, `has_negative_review`.

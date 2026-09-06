@@ -76,11 +76,18 @@ The raw ingestion layer preserves source column names exactly.
 - `stg_products` — English category name joined in, typo aliases
 - `stg_sellers` — normalised city/state casing
 
-### Intermediate models (views in `intermediate` schema)  ← Phase 4
-- `int_customer_orders` — one row per customer_unique_id with order history
+### Intermediate models (views in `intermediate` schema)
+- `int_order_items_aggregated` — order-level aggregation of items, price, freight, and product variety
+- `int_order_reviews_aggregated` — order-level aggregation of customer review ratings and flags
+- `int_customer_locations` — deterministic primary location per `customer_unique_id`
+- `int_customer_orders` — order history rollup per `customer_unique_id` (orders, spend, AOV)
+- `int_customer_fulfillment` — delivery delay days and late delivery friction metrics
+- `int_customer_reviews` — customer satisfaction feedback and negative review ratios
 
-### Mart models (tables in `mart` schema)  ← Phase 4
-- `mart_customer_metrics` — RFM scores, churn inputs, revenue at risk
+### Mart models (tables in `mart` schema)
+- `mart_customer_metrics` (93,358 rows) — central Customer Intelligence table aggregated strictly by `customer_unique_id` with RFM base metrics, recency_days, delivery delay, and review sentiment
+- `dim_customers` (93,358 rows) — star-schema dimension table with primary location, tenure, and repeat buyer flag
+- `fact_orders` (96,478 rows) — star-schema order fact table linking order lifecycle, items, payments, and reviews
 
 ## API Surface (backend/)
 

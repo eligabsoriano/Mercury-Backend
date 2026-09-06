@@ -1,0 +1,74 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: >
+      Customer dimension table for reporting and BI.
+      One row per customer_unique_id with deterministic primary location and tenure.
+    columns:
+      - name: customer_unique_id
+        description: Primary key. Unique customer identifier.
+        tests: [unique, not_null]
+      - name: city
+        description: Customer primary city.
+        tests: [not_null]
+      - name: state
+        description: Customer primary 2-letter state code.
+        tests: [not_null]
+      - name: lifetime_orders
+        description: Total delivered orders count.
+        tests: [not_null]
+      - name: is_repeat_buyer
+        description: TRUE if customer placed > 1 delivered order.
+        tests: [not_null]
+
+  - name: fact_orders
+    description: >
+      Order-level fact table uniting items, payments, delivery dates, and review scores.
+      Central fact table for analytical queries and BI dashboards.
+    columns:
+      - name: order_id
+        description: Primary key. Order identifier.
+        tests: [unique, not_null]
+      - name: customer_id
+        description: Order-scoped customer identifier.
+        tests: [not_null]
+      - name: customer_unique_id
+        description: True customer dimension key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_unique_id
+      - name: total_revenue
+        description: Total order gross revenue (price + freight).
+        tests: [not_null]
+      - name: purchased_at
+        description: Order purchase timestamp.
+        tests: [not_null]
+
+  - name: mart_customer_metrics
+    description: >
+      Central Customer Intelligence mart table aggregated by customer_unique_id.
+      Contains RFM fundamentals, delivery friction, and satisfaction metrics.
+      Feeds RFM segmentation, ML churn prediction models, and FastAPI endpoints.
+    columns:
+      - name: customer_unique_id
+        description: Primary key. Unique customer identifier.
+        tests: [unique, not_null]
+      - name: recency_days
+        description: Days elapsed between latest purchase and dataset observation benchmark.
+        tests: [not_null]
+      - name: lifetime_orders
+        description: Total count of completed delivered orders (Frequency).
+        tests: [not_null]
+      - name: lifetime_spend
+        description: Total historical spend in BRL including freight (Monetary).
+        tests: [not_null]
+      - name: avg_order_value
+        description: Average order value in BRL (spend / orders).
+        tests: [not_null]
+      - name: is_repeat_buyer
+        description: Boolean indicating whether customer has more than 1 delivered order.
+        tests: [not_null]

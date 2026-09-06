@@ -173,7 +173,7 @@ def _verify(cursor: "psycopg2.cursor") -> None:
         """
         SELECT table_schema || '.' || table_name AS qualified
         FROM information_schema.tables
-        WHERE table_schema IN ('raw', 'raw_marketing', 'staging', 'mart')
+        WHERE table_schema IN ('raw', 'raw_marketing', 'staging', 'intermediate', 'mart')
           AND table_type = 'BASE TABLE'
         ORDER BY qualified;
         """
@@ -184,7 +184,7 @@ def _verify(cursor: "psycopg2.cursor") -> None:
         """
         SELECT table_schema || '.' || table_name AS qualified
         FROM information_schema.views
-        WHERE table_schema IN ('raw', 'raw_marketing', 'staging', 'mart')
+        WHERE table_schema IN ('raw', 'raw_marketing', 'staging', 'intermediate', 'mart')
         ORDER BY qualified;
         """
     )

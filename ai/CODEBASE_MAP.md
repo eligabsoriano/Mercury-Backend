@@ -38,21 +38,20 @@ mercury/
 ├── .env.example          ← Template for DATABASE_URL and service config
 ├── .gitignore            ← Protects secrets, local CSVs, dbt artifacts, and models
 ├── requirements.txt      ← Python dependencies (FastAPI, dbt-postgres, psycopg2, etc.)
-├── README.md             ← Project overview and executive documentation
-└── up.md                 ← Current state specifications reference
+└── README.md             ← Project overview and executive documentation
 ```
 
 ## Implementation Status by Area
 
 | Directory | Area | Status | Notes |
 |:---|:---|:---|:---|
-| `sql/` | Database DDL & Migrations | ✅ Active | Migrations executed on Neon; raw schema and views created |
-| `dbt/` | Transformation Layer | ✅ Active | dbt project scaffolded, 7 staging models + 54 tests parsed |
-| `etl/` | Raw Data Ingestion | 🟡 Next | Script to copy local Olist CSVs into Neon `raw.*` |
-| `ml/` | Analytics & ML Models | ⏳ Pending | Customer RFM scoring, churn models, revenue-at-risk |
-| `backend/`| FastAPI Service | ⏳ Pending | Pydantic models & API endpoints |
+| `sql/` | Database DDL & Migrations | ✅ Active | Migrations verified on Neon; 11 tables and 16 views active |
+| `etl/` | Raw Data Ingestion | ✅ Active | `etl/ingest.py` loaded 1.56M rows across all 11 tables |
+| `dbt/` | Transformation Layer | ✅ Active | 16 models materialized (staging, intermediate, mart), 95 tests pass |
+| `tests/` | Automated Test Suite | ✅ Active | Pytest suite: 19 tests passing (schemas, ETL, dbt staging & marts) |
+| `ml/` | Analytics & ML Models | ⏳ Next | Phase 5 RFM scoring, Phase 6 churn modeling & revenue-at-risk |
+| `backend/`| FastAPI Service | ⏳ Pending | Pydantic models & REST API endpoints |
 | `notebooks/`| Exploratory Analysis | ⏳ Pending | EDA on Olist dataset |
-| `tests/` | Automated Test Suite | ⏳ Pending | Pytest suite for ETL, dbt, API, and ML components |
 
 ## Analytical Data Flow
 

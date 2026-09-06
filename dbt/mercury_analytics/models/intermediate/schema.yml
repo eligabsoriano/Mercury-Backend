@@ -1,0 +1,86 @@
+version: 2
+
+models:
+  - name: int_order_items_aggregated
+    description: >
+      Order-level aggregation of item prices, freight costs, and catalog variety.
+      Prevents multi-item fan-out when joining orders to reviews and payments.
+    columns:
+      - name: order_id
+        description: Primary key. Order identifier.
+        tests: [unique, not_null]
+      - name: item_count
+        description: Total line items in the order.
+        tests: [not_null]
+      - name: total_order_item_revenue
+        description: Total order gross revenue (price + freight).
+        tests: [not_null]
+
+  - name: int_order_reviews_aggregated
+    description: >
+      Order-level aggregation of customer review ratings and flags.
+      Combines multiple review submissions per order into a single row.
+    columns:
+      - name: order_id
+        description: Primary key. Order identifier.
+        tests: [unique, not_null]
+      - name: avg_review_score
+        description: Mean review rating (1.0 to 5.0).
+        tests: [not_null]
+
+  - name: int_customer_locations
+    description: >
+      Deterministic primary address for each customer_unique_id
+      based on the latest order purchase timestamp.
+    columns:
+      - name: customer_unique_id
+        description: Primary key. True returning customer key.
+        tests: [unique, not_null]
+      - name: primary_city
+        description: Most recent customer city.
+        tests: [not_null]
+      - name: primary_state
+        description: Most recent 2-letter state code.
+        tests: [not_null]
+
+  - name: int_customer_orders
+    description: >
+      Customer order history rollup by customer_unique_id.
+      Calculates lifetime orders, lifetime spend, AOV, and date boundaries.
+    columns:
+      - name: customer_unique_id
+        description: Primary key. True returning customer key.
+        tests: [unique, not_null]
+      - name: lifetime_orders
+        description: Total delivered orders placed by the customer.
+        tests: [not_null]
+      - name: lifetime_spend
+        description: Cumulative gross spend in BRL (price + freight).
+        tests: [not_null]
+      - name: first_purchased_at
+        description: Earliest delivered order timestamp.
+        tests: [not_null]
+      - name: latest_purchased_at
+        description: Most recent delivered order timestamp.
+        tests: [not_null]
+
+  - name: int_customer_fulfillment
+    description: >
+      Customer delivery experience and fulfillment friction metrics.
+      Aggregates carrier delay days and late delivery occurrences.
+    columns:
+      - name: customer_unique_id
+        description: Primary key. True returning customer key.
+        tests: [unique, not_null]
+      - name: late_orders_count
+        description: Number of orders delivered past the estimated date.
+        tests: [not_null]
+
+  - name: int_customer_reviews
+    description: >
+      Customer satisfaction signals aggregated by customer_unique_id.
+      Surfaces negative review counts and customer average ratings.
+    columns:
+      - name: customer_unique_id
+        description: Primary key. True returning customer key.
+        tests: [unique, not_null]

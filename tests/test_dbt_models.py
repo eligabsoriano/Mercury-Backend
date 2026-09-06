@@ -117,3 +117,93 @@ def test_stg_order_reviews_sentiment_flags(db_conn):
             else:
                 assert neg is False
                 assert pos is False
+
+
+def test_intermediate_views_exist(db_conn):
+    """Verify all 6 intermediate views exist in the intermediate schema."""
+    expected = {
+        "int_order_items_aggregated",
+        "int_order_reviews_aggregated",
+        "int_customer_locations",
+        "int_customer_orders",
+        "int_customer_fulfillment",
+        "int_customer_reviews",
+    }
+    with db_conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT table_name 
+            FROM information_schema.views 
+            WHERE table_schema = 'intermediate';
+            """
+        )
+        found = {row[0] for row in cur.fetchall()}
+        assert expected.issubset(found), f"Missing intermediate views: {expected - found}"
+
+
+def test_mart_tables_exist(db_conn):
+    """Verify all 3 mart tables are materialized in the mart schema."""
+    expected = {
+        "dim_customers",
+        "fact_orders",
+        "mart_customer_metrics",
+    }
+    with db_conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'mart' AND table_type = 'BASE TABLE';
+            """
+        )
+        found = {row[0] for row in cur.fetchall()}
+        assert expected.issubset(found), f"Missing mart tables: {expected - found}"
+
+
+def test_mart_customer_metrics_integrity(db_conn):
+    """Verify mart_customer_metrics has exact customer count, positive spend, and non-null recency."""
+    with db_conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM mart.mart_customer_metrics;")
+        total_customers = cur.fetchone()[0]
+        assert total_customers == 93358
+
+        cur.execute(
+            """
+            SELECT 
+                MIN(recency_days),
+                MAX(recency_days),
+                MIN(lifetime_spend),
+                SUM(CASE WHEN is_repeat_buyer THEN 1 ELSE 0 END)
+            FROM mart.mart_customer_metrics;
+            """
+        )
+        min_rec, max_rec, min_spend, repeat_count = cur.fetchone()
+        assert min_rec == 0
+        assert max_rec > 0
+        assert min_spend > 0
+        assert repeat_count > 0
+
+
+def test_fact_orders_integrity(db_conn):
+    """Verify fact_orders has all 96,478 delivered orders and correct total revenue."""
+    with db_conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM mart.fact_orders;")
+        total_orders = cur.fetchone()[0]
+        assert total_orders == 96478
+
+        cur.execute("SELECT COUNT(*) FROM mart.fact_orders WHERE total_revenue <= 0;")
+        invalid_rev = cur.fetchone()[0]
+        assert invalid_rev == 0
+
+
+def test_dim_customers_integrity(db_conn):
+    """Verify dim_customers matches unique customer count and has non-null locations."""
+    with db_conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM mart.dim_customers;")
+        count = cur.fetchone()[0]
+        assert count == 93358
+
+        cur.execute("SELECT COUNT(*) FROM mart.dim_customers WHERE city IS NULL OR state IS NULL;")
+        missing_loc = cur.fetchone()[0]
+        assert missing_loc == 0
+
