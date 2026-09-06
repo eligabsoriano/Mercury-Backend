@@ -2,6 +2,16 @@
 
 Snapshot date: 2026-09-06.
 
+## Phase 2 — PostgreSQL Schema (✅ Complete)
+
+| File | Purpose |
+|------|---------|
+| `sql/schema.sql` | DDL for 6 tables with FK constraints, CHECK constraints, NUMERIC money types, TIMESTAMPTZ, and 10 indexes |
+| `sql/views.sql`  | 5 analytical views: `vw_customer_revenue`, `vw_rfm_base`, `vw_at_risk_customers`, `vw_segment_summary`, `vw_revenue_at_risk_summary` |
+| `sql/migrate.py` | Re-runnable migration runner: loads `.env`, connects via psycopg2, applies schema + views in one transaction, verifies result |
+
+> **Task 2.5 (live migration)** requires your Neon `DATABASE_URL` in `.env`. Run `python sql/migrate.py` after filling in `.env`.
+
 ## Phase 1 — Scaffolding (✅ Complete)
 
 The following files and directories were created as part of Phase 1:
