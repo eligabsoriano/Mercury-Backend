@@ -11,18 +11,20 @@ source code with, any other application.
 
 - Data and analytics: Python, Pandas, NumPy, SQL, and Jupyter
 - Database: PostgreSQL, including Neon-hosted environments
+- Transformation: dbt (dbt-postgres)
 - Machine learning: scikit-learn and Matplotlib
 - API: FastAPI
 - Frontend: React, TypeScript, and Tailwind CSS
+- Mobile: Flutter and Dart
 - Reporting: Microsoft Power BI
 - Deployment targets: Vercel, Render, and Railway
 
 The documented analytical flow is:
 
 ```text
-Online Retail II data -> ETL and cleaning -> PostgreSQL
-    -> customer metrics and RFM -> churn models and recommendations
-    -> Power BI, FastAPI, and React
+Olist Brazilian E-Commerce data -> ETL ingestion -> PostgreSQL (raw)
+    -> dbt transformations (staging, intermediate, mart) -> RFM & churn ML models
+    -> Power BI, FastAPI, React, and Mobile
 ```
 
 # Repository Guidance

@@ -93,7 +93,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: [1, 2, 3, 4, 5]
+              arguments:
+                values: [1, 2, 3, 4, 5]
       - name: is_negative_review
         description: TRUE if review_score ≤ 2.
       - name: is_positive_review

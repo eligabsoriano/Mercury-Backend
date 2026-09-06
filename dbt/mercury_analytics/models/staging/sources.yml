@@ -38,14 +38,16 @@ sources:
             tests:
               - not_null
               - relationships:
-                  to: source('raw', 'customers')
-                  field: customer_id
+                  arguments:
+                    to: source('raw', 'customers')
+                    field: customer_id
           - name: order_status
             description: "delivered | shipped | canceled | unavailable | invoiced | processing | created | approved"
             tests:
               - not_null
               - accepted_values:
-                  values: [delivered, shipped, canceled, unavailable, invoiced, processing, created, approved]
+                  arguments:
+                    values: [delivered, shipped, canceled, unavailable, invoiced, processing, created, approved]
           - name: order_purchase_timestamp
             description: UTC timestamp of purchase. Primary date dimension for recency.
             tests: [not_null]
@@ -106,7 +108,8 @@ sources:
             tests:
               - not_null
               - accepted_values:
-                  values: [1, 2, 3, 4, 5]
+                  arguments:
+                    values: [1, 2, 3, 4, 5]
 
       - name: products
         description: >
