@@ -149,3 +149,28 @@ Transformation: dbt (`dbt/mercury_analytics/`)
 - **Key**: `order_id` (VARCHAR PK).
 - **Foreign Keys**: `customer_id` (stg_customers), `customer_unique_id` (dim_customers).
 - **Columns**: Status, timestamps, `delivery_delay_days`, `is_late_delivery`, `item_count`, `total_revenue`, `total_payment_value`, `primary_payment_type`, `avg_review_score`, `has_negative_review`.
+
+---
+
+## 7. Machine Learning Schema (`ml` Schema — Tables)
+
+### `ml.rfm_segments` (93,358 rows)
+- **Description**: RFM customer segmentation results computed by `ml/rfm.py`.
+- **Key**: `customer_unique_id` (VARCHAR PK).
+- **Columns**: `recency_days`, `frequency`, `monetary`, `r_score` (1–5), `f_score` (1–5), `m_score` (1–5), `rfm_score` (composite mean), `rfm_label` (e.g. '515'), `segment` (Champions, Loyal, Potential Loyalists, New, At Risk, Lost, Others), `computed_at`.
+
+### `ml.churn_predictions` (93,358 rows)
+- **Description**: Churn risk scores and expected revenue at risk computed by `ml/churn.py`.
+- **Key**: `customer_unique_id` (VARCHAR PK).
+- **Columns**:
+  - `is_churned`: SMALLINT (observed ground-truth inactivity label based on window, e.g. 90 days).
+  - `churn_probability`: NUMERIC(6, 4) (calibrated probability $P(\text{Churn}) \in [0.0000, 1.0000]$ from winning HistGradientBoosting model).
+  - `risk_tier`: VARCHAR(20) ('High' $\ge 0.70$, 'Medium' $0.30\text{--}0.70$, 'Low' $< 0.30$).
+  - `monetary_value`: NUMERIC(12, 2) (customer lifetime spend).
+  - `revenue_at_risk`: NUMERIC(12, 2) ($P(\text{Churn}) \times \text{monetary\_value}$).
+  - `retention_priority`: VARCHAR(50) (Priority 1: Immediate VIP Retention, Priority 2: Loyalty & Nurture, Priority 3: Automated Re-engagement, Priority 4: Standard Operations, Medium Priority).
+  - `predicted_at`: TIMESTAMPTZ.
+- **Indexes**:
+  - `idx_churn_predictions_risk_tier` on `(risk_tier)`.
+  - `idx_churn_predictions_retention_priority` on `(retention_priority)`.
+  - `idx_churn_predictions_revenue_at_risk` on `(revenue_at_risk DESC)`.

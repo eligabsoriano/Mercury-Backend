@@ -48,9 +48,9 @@ mercury/
 | `sql/` | Database DDL & Migrations | ✅ Active | Migrations verified on Neon; 11 tables and 16 views active |
 | `etl/` | Raw Data Ingestion | ✅ Active | `etl/ingest.py` loaded 1.56M rows across all 11 tables |
 | `dbt/` | Transformation Layer | ✅ Active | 16 models materialized (staging, intermediate, mart), 95 tests pass |
-| `tests/` | Automated Test Suite | ✅ Active | Pytest suite: 19 tests passing (schemas, ETL, dbt staging & marts) |
-| `ml/` | Analytics & ML Models | ⏳ Next | Phase 5 RFM scoring, Phase 6 churn modeling & revenue-at-risk |
-| `backend/`| FastAPI Service | ⏳ Pending | Pydantic models & REST API endpoints |
+| `tests/` | Automated Test Suite | ✅ Active | Pytest suite: 94 tests passing across schemas, ETL, dbt, RFM, Churn, and FastAPI |
+| `ml/` | Analytics & ML Models | ✅ Active | Phase 5 RFM scoring (`ml/rfm.py`), Phase 6 Churn & Revenue-at-Risk (`ml/churn.py`) |
+| `backend/`| FastAPI Service | ✅ Active | Phase 7: Pydantic v2 schemas, database services, and REST API routes |
 | `notebooks/`| Exploratory Analysis | ⏳ Pending | EDA on Olist dataset |
 
 ## Analytical Data Flow

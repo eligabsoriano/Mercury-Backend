@@ -56,11 +56,54 @@ Snapshot date: 2026-09-06.
 - Validated with **95 out of 95 dbt tests passing** (`PASS=95 WARN=0 ERROR=0`).
 - Validated with **19 out of 19 pytest tests passing** (`tests/test_dbt_models.py`, `tests/test_database_schema.py`, `tests/test_etl_ingestion.py`).
 
+### 8. RFM Customer Segmentation (Phase 5 — ✅ Complete)
+- Implemented `ml/rfm.py` to query `mart.mart_customer_metrics` via SQLAlchemy and PostgreSQL.
+- Quintile scoring on inverted Recency ($R \in [1, 5]$) and Monetary ($M \in [1, 5]$).
+- Custom behavioral tiers on Frequency ($F \in [1, 5]$) handling the 96.9% single-order e-commerce skew.
+- Segment assignment (Champions, Loyal Customers, Potential Loyalists, New Customers, At Risk, Lost / Inactive, Others).
+- Upserted 93,358 rows into `ml.rfm_segments` with composite RFM scores and string labels.
+- Validated with **26 out of 26 tests passing** in `tests/test_rfm.py` (14 unit + 12 integration).
+
+### 9. Churn Prediction & Revenue-at-Risk ML (Phase 6 — ✅ Complete)
+- Implemented `ml/churn.py` to train and evaluate ML classifiers on 26 customer intelligence features from `mart.mart_customer_metrics` and `ml.rfm_segments`.
+- Churn target defined via time-bounded inactivity window (e.g. 90/180 days; default 90 days = 80.09% observed churn).
+- Recency target leakage eliminated: `recency_days` and $R$ scores strictly excluded from feature matrix.
+- Trained and benchmarked candidate classifiers on stratified test cohort:
+  - **HistGradientBoosting**: ROC-AUC: 0.9328 | PR-AUC: 0.9841 | F1: 0.9168 | Precision@10%: 1.0000
+  - **Random Forest**: ROC-AUC: 0.9171 | PR-AUC: 0.9805 | F1: 0.9053 | Precision@10%: 1.0000
+  - **Logistic Regression**: ROC-AUC: 0.8915 | PR-AUC: 0.9745 | F1: 0.8837 | Precision@10%: 1.0000
+- Winning model artifact (HistGradientBoosting pipeline) serialized to `ml/artifacts/churn_model.joblib`.
+- Calibrated churn probabilities and Revenue at Risk ($\text{RAR} = P(\text{Churn}) \times \text{lifetime\_spend}$) computed across all 93,358 customers:
+  - High Churn Risk ($P \ge 0.70$): 60,274 customers (64.6%) representing R$ 9.55M revenue at risk.
+  - Priority 1 (VIP Retention): 23,124 high-spend at-risk customers representing R$ 6.91M revenue at risk.
+- Upserted 93,358 rows into `ml.churn_predictions` with indexes on `risk_tier`, `retention_priority`, and `revenue_at_risk DESC`.
+- Validated with **28 out of 28 tests passing** in `tests/test_churn.py`.
+- Full project test suite: **73 out of 73 tests passing** (0 failures, 0 warnings).
+
+### 10. FastAPI Application Layer (Phase 7 — ✅ Complete)
+- Application Architecture:
+  - `backend/config.py`: Environment configuration and CORS settings.
+  - `backend/database.py`: SQLAlchemy connection pooling with pre-ping, session dependency generator, and live health diagnostics.
+  - `backend/schemas/`: Pydantic v2 schemas (`PortfolioOverview`, `SegmentsOverview`, `RevenueAtRiskOverview`, `CustomerDetail`, `CustomerListResponse`, `RFMScorecard`, `ChurnPrediction`, `HealthResponse`).
+  - `backend/services/`: High-performance analytical and customer query services (`AnalyticsService`, `CustomerService`).
+  - `backend/routers/`: Modular route handlers (`health_router`, `analytics_router`, `customers_router`).
+  - `backend/main.py`: Application entrypoint with OpenAPI docs (`/docs`, `/redoc`, `/openapi.json`), CORS middleware, and route registrations.
+- Endpoints Implemented & Verified:
+  - `GET /health` & `GET /api/health`: Live database latency and service status.
+  - `GET /api/analytics/overview`: Macro-level GMV, orders, AOV, repeat rate, portfolio revenue at risk (R$ 12.28M), and VIP retention exposure.
+  - `GET /api/analytics/segments`: RFM segment breakdown (counts, percentages, total spend, averages).
+  - `GET /api/analytics/rfm`: Alias for RFM segment distribution.
+  - `GET /api/analytics/revenue-at-risk`: Financial exposure across risk tiers (High, Medium, Low) and retention priorities, with top at-risk preview.
+  - `GET /api/customers`: Paginated customer listings with filtering by RFM segment, churn risk tier, retention priority, state, spend range, ID search, and dynamic sorting.
+  - `GET /api/customers/at-risk`: Actionable retention queue sorted by expected revenue at risk descending.
+  - `GET /api/customers/{customer_unique_id}`: Comprehensive 360-degree customer intelligence profile with order history, basket diversity, fulfillment friction, review sentiment, RFM scores, and ML churn prediction.
+  - `GET /api/customers/{customer_unique_id}/rfm`: Detailed customer RFM scorecard.
+  - `GET /api/customers/{customer_unique_id}/churn`: Individual churn probability, risk tier, and retention action.
+- Validated with **21 out of 21 tests passing** in `tests/test_api.py`.
+- Full project test suite: **94 out of 94 tests passing** across 6 test modules.
+
 ---
 
-## Next Phase: Phase 5 — RFM Customer Segmentation (Analytics Layer)
-- Implement `ml/rfm.py` to query `mart.mart_customer_metrics`.
-- Score Recency ($R$) and Monetary ($M$) quintiles (1–5).
-- Apply tailored e-commerce Frequency ($F$) logic ($F=1$ vs $F \ge 2$).
-- Assign customer segments: Champions, Loyal Customers, Potential Loyalists, At Risk, Lost, New Customers.
-- Materialize or persist RFM segment labels back to PostgreSQL for ML churn modeling and API serving.
+## Next Phase: Phase 8 — Power BI & Reporting / Frontend Integration
+- Power BI star-schema reporting and dashboard templates (`dim_customers`, `fact_orders`, `mart_customer_metrics`).
+- Frontend integration contracts for Web (React / TypeScript) and Mobile (Flutter / Dart).
