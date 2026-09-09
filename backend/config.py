@@ -34,8 +34,16 @@ class Settings:
         self.host: str = os.getenv("HOST", "0.0.0.0")
         self.port: int = int(os.getenv("PORT", "8000"))
 
-        # Database connection URL
+        # Database connection and pool settings
         self.database_url: str = os.getenv("DATABASE_URL", "")
+        self.db_pool_size: int = int(os.getenv("DB_POOL_SIZE", "10"))
+        self.db_max_overflow: int = int(os.getenv("DB_MAX_OVERFLOW", "20"))
+        self.db_pool_recycle: int = int(os.getenv("DB_POOL_RECYCLE", "300"))
+        self.db_pool_timeout: int = int(os.getenv("DB_POOL_TIMEOUT", "30"))
+
+        # In-memory TTL caching configuration
+        self.cache_enabled: bool = os.getenv("CACHE_ENABLED", "true").lower() in ("true", "1", "yes")
+        self.cache_default_ttl: int = int(os.getenv("CACHE_DEFAULT_TTL_SECONDS", "300"))
 
         # CORS configuration
         raw_origins = os.getenv("CORS_ORIGINS", "*")

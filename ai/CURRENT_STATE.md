@@ -99,11 +99,30 @@ Snapshot date: 2026-09-06.
   - `GET /api/customers/{customer_unique_id}`: Comprehensive 360-degree customer intelligence profile with order history, basket diversity, fulfillment friction, review sentiment, RFM scores, and ML churn prediction.
   - `GET /api/customers/{customer_unique_id}/rfm`: Detailed customer RFM scorecard.
   - `GET /api/customers/{customer_unique_id}/churn`: Individual churn probability, risk tier, and retention action.
-- Validated with **21 out of 21 tests passing** in `tests/test_api.py`.
+- Validated with **22 out of 22 tests passing** in `tests/test_api.py`.
 - Full project test suite: **94 out of 94 tests passing** across 6 test modules.
+
+### 11. Performance & In-Memory TTL Caching Layer (Phase 2 — ✅ Complete)
+- Application Architecture:
+  - `backend/cache.py`: High-performance, thread-safe in-memory caching engine protected by `threading.RLock` with monotonic clock-based TTL expiration (`time.monotonic()`) and LRU capacity protection (`max_size=5000`).
+  - Automatic filtering of transient and unhashable objects (`Session`, `Request`, `Response`, `bypass_cache`) to guarantee deterministic key generation.
+  - Decorator `@cached(ttl=300)` supporting both synchronous and asynchronous functions.
+  - First-class support for `?bypass_cache=true` query parameter to force live re-querying and cache refreshment.
+  - `backend/database.py`: Tuned connection pooling for serverless PostgreSQL:
+    - `pool_size=10`
+    - `max_overflow=20`
+    - `pool_recycle=300`
+    - `pool_timeout=30`
+    - `pool_pre_ping=True`
+  - Cache Management & Telemetry Endpoints:
+    - `GET /api/analytics/cache/stats`: Telemetry on cache hits, misses, bypasses, evictions, active items, and hit ratio percentage.
+    - `POST /api/analytics/cache/clear`: Purges active cache entries on demand.
+- Validated with **10 out of 10 tests passing** in `tests/test_cache.py`.
+- Validated with **22 out of 22 tests passing** in `tests/test_api.py` including caching and bypass verification.
+- Full project test suite: **105 out of 105 tests passing** across 7 test suites.
 
 ---
 
-## Next Phase: Phase 8 — Power BI & Reporting / Frontend Integration
-- Power BI star-schema reporting and dashboard templates (`dim_customers`, `fact_orders`, `mart_customer_metrics`).
-- Frontend integration contracts for Web (React / TypeScript) and Mobile (Flutter / Dart).
+## Next Steps
+- Implement remaining Phase 1 endpoints: Revenue time-series, cohort retention curves, seller intelligence, product catalog intelligence, and CSV export.
+- Implement Phase 3: Production Hardening & API Security (API key/Bearer auth, rate limiting, request tracing).

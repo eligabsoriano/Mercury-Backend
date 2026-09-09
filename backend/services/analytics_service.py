@@ -23,6 +23,7 @@ from backend.schemas.churn import (
 )
 from backend.schemas.customer import CustomerSummary
 from backend.schemas.rfm import SegmentDistribution
+from backend.cache import cached, clear_cache, get_cache_stats
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +32,8 @@ class AnalyticsService:
     """Service providing aggregate customer portfolio analytics and financial metrics."""
 
     @staticmethod
-    def get_portfolio_overview(db: Session) -> PortfolioOverview:
+    @cached(ttl=300)
+    def get_portfolio_overview(db: Session, bypass_cache: bool = False) -> PortfolioOverview:
         """
         Aggregate macro-level portfolio KPIs: total customers, revenue, AOV,
         repeat rate, total revenue-at-risk, and VIP retention exposure.
@@ -99,7 +101,8 @@ class AnalyticsService:
         )
 
     @staticmethod
-    def get_segments_overview(db: Session) -> SegmentsOverview:
+    @cached(ttl=300)
+    def get_segments_overview(db: Session, bypass_cache: bool = False) -> SegmentsOverview:
         """
         Aggregate portfolio distribution across RFM customer segments.
         Calculates customer counts, percentage, total spend, and averages.
@@ -145,8 +148,9 @@ class AnalyticsService:
         )
 
     @staticmethod
+    @cached(ttl=300)
     def get_revenue_at_risk_overview(
-        db: Session, include_top_preview: bool = True
+        db: Session, include_top_preview: bool = True, bypass_cache: bool = False
     ) -> RevenueAtRiskOverview:
         """
         Detailed financial breakdown of churn exposure across risk tiers and retention priority groups.
@@ -292,3 +296,14 @@ class AnalyticsService:
             by_retention_priority=by_priority,
             top_at_risk_preview=top_preview,
         )
+
+    @staticmethod
+    def get_cache_stats() -> Dict[str, Any]:
+        """Return global in-memory TTL cache telemetry."""
+        return get_cache_stats()
+
+    @staticmethod
+    def clear_cache() -> int:
+        """Purge all active items in the in-memory cache."""
+        return clear_cache()
+

@@ -98,8 +98,11 @@ def get_at_risk_customers(
     summary="Customer Segments Breakdown (Convenience Alias)",
     description="Returns aggregate RFM customer segmentation summary.",
 )
-def get_customer_segments_alias(db: Session = Depends(get_db)) -> SegmentsOverview:
-    return AnalyticsService.get_segments_overview(db)
+def get_customer_segments_alias(
+    bypass_cache: bool = Query(False, description="Bypass in-memory cache and force live database query"),
+    db: Session = Depends(get_db),
+) -> SegmentsOverview:
+    return AnalyticsService.get_segments_overview(db, bypass_cache=bypass_cache)
 
 
 @router.get(

@@ -25,14 +25,15 @@ if not settings.database_url:
 
 # Neon / PostgreSQL connection pool settings:
 # - pool_pre_ping ensures stale/closed connections from serverless sleep are refreshed.
-# - pool_recycle prevents stale connections by recycling every 5 minutes.
+# - pool_recycle prevents stale connections by recycling connections (default 300s).
+# - pool_size & max_overflow scaled for high-concurrency analytical throughput.
 engine = create_engine(
     settings.database_url,
     pool_pre_ping=True,
-    pool_recycle=300,
-    pool_size=5,
-    max_overflow=10,
-    pool_timeout=30,
+    pool_recycle=settings.db_pool_recycle,
+    pool_size=settings.db_pool_size,
+    max_overflow=settings.db_max_overflow,
+    pool_timeout=settings.db_pool_timeout,
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

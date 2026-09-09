@@ -136,6 +136,42 @@ def test_analytics_revenue_at_risk(client: TestClient) -> None:
     assert len(data["top_at_risk_preview"]) == 5
 
 
+def test_analytics_caching_and_bypass(client: TestClient) -> None:
+    """Verify in-memory TTL caching and bypass_cache query parameter across analytics endpoints."""
+    # 1. Clear cache to establish clean baseline
+    clear_res = client.post("/api/analytics/cache/clear")
+    assert clear_res.status_code == 200
+    assert clear_res.json()["status"] == "cleared"
+
+    # 2. First call to /overview: cache miss
+    res1 = client.get("/api/analytics/overview")
+    assert res1.status_code == 200
+
+    # 3. Second call to /overview: cache hit
+    res2 = client.get("/api/analytics/overview")
+    assert res2.status_code == 200
+    assert res1.json() == res2.json()
+
+    # 4. Third call with bypass_cache=true: forces live re-query
+    res3 = client.get("/api/analytics/overview?bypass_cache=true")
+    assert res3.status_code == 200
+    assert res3.json()["total_customers"] == 93358
+
+    # 5. Inspect cache telemetry
+    stats_res = client.get("/api/analytics/cache/stats")
+    assert stats_res.status_code == 200
+    stats = stats_res.json()
+    assert stats["hits"] >= 1
+    assert stats["bypasses"] >= 1
+    assert stats["active_items"] >= 1
+
+    # 6. Verify bypass_cache on segments and revenue-at-risk
+    seg_res = client.get("/api/analytics/segments?bypass_cache=true")
+    assert seg_res.status_code == 200
+    rar_res = client.get("/api/analytics/revenue-at-risk?bypass_cache=true")
+    assert rar_res.status_code == 200
+
+
 # ===========================================================================
 # 3. Customer Listing & Filtering Endpoints
 # ===========================================================================
