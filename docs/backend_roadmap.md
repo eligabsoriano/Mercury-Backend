@@ -6,13 +6,13 @@ This document defines the roadmap and engineering plan to advance the **Mercury 
 
 ## 1. Executive Summary & Baseline
 
-### Current Completion Status: ~85% (Backend) / ~65% (Full Project)
+### Current Completion Status: ~92% (Backend) / ~75% (Full Project)
 - **Data & Migration Layer**: 11 raw tables, 3 views, 1.56M records in Neon PostgreSQL (100%).
 - **Transformation Layer (dbt)**: 7 staging views, 6 intermediate models, 3 mart tables (`mart_customer_metrics`, `dim_customers`, `fact_orders`) with 95 dbt tests passing (100%).
 - **Analytics & ML Layer**: RFM segmentation (`ml.rfm_segments`) and HistGradientBoosting Churn ML model (`ml.churn_predictions`) scoring 93,358 customers (100%).
-- **FastAPI API Core & Caching**: 12 endpoints serving portfolio KPIs, RFM distributions, revenue-at-risk tiers, customer listings with faceted filters, at-risk queues, 360° customer intelligence profiles, and cache telemetry/flush (85%).
+- **FastAPI Domain & Analytical API Core (Phase 1)**: 23 endpoints serving portfolio KPIs, RFM distributions, revenue-at-risk tiers, time-series revenue trends, cohort retention survival decay, paginated customer listings, at-risk queues, 360° customer intelligence profiles, streaming CSV export, seller scorecards, and product catalog intelligence (100%).
 - **Performance & Caching Layer (Phase 2)**: Thread-safe in-memory TTL caching with bypass support and tuned connection pooling (100%).
-- **Verification Baseline**: 105 passing pytest tests across 7 test suites.
+- **Verification Baseline**: 120 passing pytest tests across 9 test suites.
 
 ### Objective
 Complete the remaining analytical endpoints, add low-latency caching, implement security and rate limiting, provide CSV campaign export, containerize with Docker, establish automated GitHub Actions CI/CD, and generate client integration contracts for React, Flutter, and Microsoft Power BI.
@@ -63,89 +63,62 @@ graph TD
 
 ---
 
-### Phase 1: Missing Domain & Analytical Endpoints
+### Phase 1: Missing Domain & Analytical Endpoints (✅ Complete)
 
-#### 1.1 Revenue Trends Time-Series (`GET /api/analytics/revenue`)
+#### 1.1 Revenue Trends Time-Series (`GET /api/analytics/revenue`) (✅ Complete)
 - **Route**: `GET /api/analytics/revenue?interval=month&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD`
 - **Data Source**: `mart.fact_orders` grouped by `DATE_TRUNC(:interval, purchased_at)`.
-- **Response Shape**:
-  ```json
-  {
-    "interval": "month",
-    "total_periods": 24,
-    "trends": [
-      {
-        "period": "2017-01",
-        "gmv": 120350.40,
-        "orders_count": 780,
-        "delivered_count": 765,
-        "avg_order_value": 154.29,
-        "total_freight": 18240.10,
-        "late_order_rate": 4.5
-      }
-    ]
-  }
-  ```
+- **Response Shape**: `RevenueAnalyticsResponse` containing chronological `trends` list with `gmv`, `orders_count`, `delivered_count`, `avg_order_value`, `total_freight`, and `late_order_rate`.
 - **Files**:
-  - `backend/schemas/analytics.py` (Add `RevenueTrendPoint`, `RevenueAnalyticsResponse`)
-  - `backend/services/analytics_service.py` (Add `get_revenue_trends`)
-  - `backend/routers/analytics.py` (Add route handler)
-  - `tests/test_api.py` (Add test cases)
+  - `backend/schemas/analytics.py` (`RevenueTrendPoint`, `RevenueAnalyticsResponse`)
+  - `backend/services/analytics_service.py` (`get_revenue_trends`)
+  - `backend/routers/analytics.py` (`GET /api/analytics/revenue`)
+  - `tests/test_api.py` (`test_analytics_revenue_trends`)
 
-#### 1.2 Customer Cohort Retention Analysis (`GET /api/analytics/retention`)
+#### 1.2 Customer Cohort Retention Analysis (`GET /api/analytics/retention`) (✅ Complete)
 - **Route**: `GET /api/analytics/retention`
-- **Data Source**: `mart.dim_customers` (acquisition month) joined to `mart.fact_orders` (order month) to calculate month-by-month cohort survival percentages ($M+0, M+1, \dots, M+12$).
-- **Response Shape**:
-  ```json
-  {
-    "cohorts": [
-      {
-        "cohort_month": "2017-01",
-        "cohort_size": 750,
-        "retention_rates": {
-          "m0": 100.0,
-          "m1": 4.1,
-          "m2": 2.8,
-          "m3": 3.2
-        }
-      }
-    ]
-  }
-  ```
+- **Data Source**: `mart.dim_customers` (first purchase month) joined to `mart.fact_orders` (order month) calculating survival rates ($M+0, M+1, \dots, M+12$).
+- **Response Shape**: `RetentionAnalyticsResponse` containing `cohorts` list with `cohort_month`, `cohort_size`, and month-by-month `retention_rates` map.
 - **Files**:
-  - `backend/schemas/analytics.py` (Add `CohortRetentionPoint`, `RetentionAnalyticsResponse`)
-  - `backend/services/analytics_service.py` (Add `get_cohort_retention`)
-  - `backend/routers/analytics.py` (Add route handler)
+  - `backend/schemas/analytics.py` (`CohortRetentionPoint`, `RetentionAnalyticsResponse`)
+  - `backend/services/analytics_service.py` (`get_cohort_retention`)
+  - `backend/routers/analytics.py` (`GET /api/analytics/retention`)
+  - `tests/test_api.py` (`test_analytics_cohort_retention`)
 
-#### 1.3 Marketplace Seller Intelligence (`GET /api/sellers`, `GET /api/sellers/{id}`)
+#### 1.3 Marketplace Seller Intelligence (`GET /api/sellers`, `GET /api/sellers/{id}`) (✅ Complete)
 - **Routes**:
   - `GET /api/sellers?page=1&page_size=20&state=SP&sort_by=total_revenue`
   - `GET /api/sellers/{seller_id}`
-- **Data Source**: `raw.sellers`, `raw.order_items`, `raw.order_reviews`, `staging.stg_orders`.
-- **Metrics**: Total orders fulfilled, gross merchandise value, average delivery delay, late shipment percentage, average review rating.
+- **Data Source**: `staging.stg_sellers`, `staging.stg_order_items`, `staging.stg_orders`, `staging.stg_order_reviews`.
+- **Metrics**: Total orders fulfilled, items sold, gross merchandise value, average item value, delivery delay days, late delivery rate, and average review score.
 - **Files**:
-  - `backend/schemas/seller.py` (New: `SellerSummary`, `SellerDetail`, `SellerListResponse`)
-  - `backend/services/seller_service.py` (New: `SellerService`)
-  - `backend/routers/sellers.py` (New: `sellers_router`)
-  - `backend/main.py` (Register router)
+  - `backend/schemas/seller.py` (`SellerSummary`, `SellerDetail`, `SellerListResponse`)
+  - `backend/services/seller_service.py` (`SellerService`)
+  - `backend/routers/sellers.py` (`sellers_router`)
+  - `backend/main.py` (Registered router)
+  - `tests/test_sellers.py` (6 functional tests passing)
 
-#### 1.4 Product Catalog Intelligence (`GET /api/products`, `GET /api/products/categories`)
+#### 1.4 Product Catalog Intelligence (`GET /api/products`, `GET /api/products/categories`) (✅ Complete)
 - **Routes**:
   - `GET /api/products?page=1&page_size=20&category=health_beauty`
   - `GET /api/products/categories`
-- **Data Source**: `staging.stg_products`, `raw.order_items`, `staging.stg_order_reviews`.
-- **Metrics**: Product sales velocity, revenue contribution, weight/volume metrics, review score distribution.
+  - `GET /api/products/{product_id}`
+- **Data Source**: `staging.stg_products`, `staging.stg_order_items`, `staging.stg_order_reviews`.
+- **Metrics**: Units sold, orders count, total revenue, average unit price, customer review ratings, weight and package dimensions.
 - **Files**:
-  - `backend/schemas/product.py` (New: `ProductSummary`, `CategorySummary`, `ProductListResponse`)
-  - `backend/services/product_service.py` (New: `ProductService`)
-  - `backend/routers/products.py` (New: `products_router`)
-  - `backend/main.py` (Register router)
+  - `backend/schemas/product.py` (`ProductSummary`, `CategorySummary`, `ProductListResponse`, `CategoryListResponse`)
+  - `backend/services/product_service.py` (`ProductService`)
+  - `backend/routers/products.py` (`products_router`)
+  - `backend/main.py` (Registered router)
+  - `tests/test_products.py` (6 functional tests passing)
 
-#### 1.5 CSV/Excel Campaign Export (`GET /api/customers/export`)
+#### 1.5 CSV/Excel Campaign Export (`GET /api/customers/export`) (✅ Complete)
 - **Route**: `GET /api/customers/export?risk_tier=High&segment=Champions&format=csv`
-- **Behavior**: Streams CSV records with `customer_unique_id`, `state`, `lifetime_spend`, `churn_probability`, `risk_tier`, `retention_priority`, and recommended action for CRM / marketing campaigns.
+- **Behavior**: Streams formatted CSV with `customer_unique_id`, `state`, `city`, `lifetime_spend`, `lifetime_orders`, `recency_days`, `segment`, `churn_probability`, `risk_tier`, `revenue_at_risk`, `retention_priority`, and tailored `recommended_action`.
 - **Files**:
-  - `backend/routers/customers.py` (Streaming response using `fastapi.responses.StreamingResponse`)
+  - `backend/services/customer_service.py` (`stream_customers_csv`)
+  - `backend/routers/customers.py` (`export_customers_csv` using `StreamingResponse`)
+  - `tests/test_api.py` (`test_export_customers_csv`)
 
 ---
 

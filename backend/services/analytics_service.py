@@ -13,8 +13,12 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from backend.schemas.analytics import (
+    CohortRetentionPoint,
     PortfolioOverview,
+    RetentionAnalyticsResponse,
+    RevenueAnalyticsResponse,
     RevenueAtRiskOverview,
+    RevenueTrendPoint,
     SegmentsOverview,
 )
 from backend.schemas.churn import (
@@ -295,6 +299,160 @@ class AnalyticsService:
             by_risk_tier=by_risk_tier,
             by_retention_priority=by_priority,
             top_at_risk_preview=top_preview,
+        )
+
+    @staticmethod
+    @cached(ttl=300)
+    def get_revenue_trends(
+        db: Session,
+        interval: str = "month",
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        bypass_cache: bool = False,
+    ) -> RevenueAnalyticsResponse:
+        """
+        Aggregate historical revenue, order volume, AOV, freight, and late delivery rates
+        grouped by time interval ('month', 'week', 'day').
+        """
+        valid_intervals = {"month", "week", "day"}
+        clean_interval = interval.lower() if interval.lower() in valid_intervals else "month"
+
+        if clean_interval == "month":
+            date_format = "YYYY-MM"
+        elif clean_interval == "week":
+            date_format = 'YYYY-"W"IW'
+        else:
+            date_format = "YYYY-MM-DD"
+
+        where_clauses = ["purchased_at IS NOT NULL"]
+        params: Dict[str, Any] = {}
+
+        if start_date:
+            where_clauses.append("purchased_at >= :start_date")
+            params["start_date"] = start_date
+        if end_date:
+            where_clauses.append("purchased_at <= :end_date")
+            params["end_date"] = end_date
+
+        where_sql = " AND ".join(where_clauses)
+
+        query = text(
+            f"""
+            SELECT
+                TO_CHAR(DATE_TRUNC('{clean_interval}', purchased_at), '{date_format}') AS period,
+                ROUND(COALESCE(SUM(total_revenue), 0.0)::numeric, 2) AS gmv,
+                COUNT(order_id) AS orders_count,
+                COUNT(order_id) FILTER (WHERE delivered_at IS NOT NULL) AS delivered_count,
+                ROUND(COALESCE(AVG(total_revenue), 0.0)::numeric, 2) AS avg_order_value,
+                ROUND(COALESCE(SUM(freight_revenue), 0.0)::numeric, 2) AS total_freight,
+                ROUND(COALESCE(AVG(CASE WHEN is_late_delivery THEN 1.0 ELSE 0.0 END), 0.0)::numeric * 100.0, 2) AS late_order_rate
+            FROM mart.fact_orders
+            WHERE {where_sql}
+            GROUP BY 1
+            ORDER BY 1 ASC
+            """
+        )
+        rows = db.execute(query, params).mappings().all()
+
+        trends = [
+            RevenueTrendPoint(
+                period=r["period"],
+                gmv=float(r["gmv"]),
+                orders_count=int(r["orders_count"]),
+                delivered_count=int(r["delivered_count"]),
+                avg_order_value=float(r["avg_order_value"]),
+                total_freight=float(r["total_freight"]),
+                late_order_rate=float(r["late_order_rate"]),
+            )
+            for r in rows
+        ]
+
+        return RevenueAnalyticsResponse(
+            interval=clean_interval,
+            total_periods=len(trends),
+            trends=trends,
+        )
+
+    @staticmethod
+    @cached(ttl=300)
+    def get_cohort_retention(
+        db: Session,
+        bypass_cache: bool = False,
+    ) -> RetentionAnalyticsResponse:
+        """
+        Calculate month-by-month customer cohort survival rates (M+0 to M+12)
+        joining customer acquisition month in mart.dim_customers to repeat purchases in mart.fact_orders.
+        """
+        query = text(
+            """
+            WITH customer_cohorts AS (
+                SELECT
+                    customer_unique_id,
+                    DATE_TRUNC('month', first_purchased_at) AS cohort_month
+                FROM mart.dim_customers
+                WHERE first_purchased_at IS NOT NULL
+            ),
+            cohort_sizes AS (
+                SELECT
+                    cohort_month,
+                    COUNT(DISTINCT customer_unique_id) AS cohort_size
+                FROM customer_cohorts
+                GROUP BY 1
+            ),
+            customer_activities AS (
+                SELECT
+                    cc.cohort_month,
+                    cc.customer_unique_id,
+                    ((EXTRACT(YEAR FROM fo.purchased_at) - EXTRACT(YEAR FROM cc.cohort_month)) * 12 +
+                     (EXTRACT(MONTH FROM fo.purchased_at) - EXTRACT(MONTH FROM cc.cohort_month)))::int AS month_offset
+                FROM customer_cohorts cc
+                JOIN mart.fact_orders fo ON cc.customer_unique_id = fo.customer_unique_id
+                WHERE fo.purchased_at IS NOT NULL
+            ),
+            cohort_retention_counts AS (
+                SELECT
+                    cohort_month,
+                    month_offset,
+                    COUNT(DISTINCT customer_unique_id) AS retained_customers
+                FROM customer_activities
+                WHERE month_offset >= 0 AND month_offset <= 12
+                GROUP BY 1, 2
+            )
+            SELECT
+                TO_CHAR(cs.cohort_month, 'YYYY-MM') AS cohort_month,
+                cs.cohort_size,
+                crc.month_offset,
+                ROUND((crc.retained_customers::numeric / cs.cohort_size::numeric) * 100.0, 2) AS retention_rate
+            FROM cohort_sizes cs
+            JOIN cohort_retention_counts crc ON cs.cohort_month = crc.cohort_month
+            ORDER BY cs.cohort_month ASC, crc.month_offset ASC
+            """
+        )
+        rows = db.execute(query).mappings().all()
+
+        cohort_dict: Dict[str, Dict[str, Any]] = {}
+        for r in rows:
+            c_month = r["cohort_month"]
+            if c_month not in cohort_dict:
+                cohort_dict[c_month] = {
+                    "cohort_size": int(r["cohort_size"]),
+                    "rates": {},
+                }
+            offset = int(r["month_offset"])
+            cohort_dict[c_month]["rates"][f"m{offset}"] = float(r["retention_rate"])
+
+        cohorts = [
+            CohortRetentionPoint(
+                cohort_month=month,
+                cohort_size=data["cohort_size"],
+                retention_rates=data["rates"],
+            )
+            for month, data in cohort_dict.items()
+        ]
+
+        return RetentionAnalyticsResponse(
+            total_cohorts=len(cohorts),
+            cohorts=cohorts,
         )
 
     @staticmethod

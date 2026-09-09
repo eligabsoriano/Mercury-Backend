@@ -8,7 +8,7 @@ and detailed multi-layer customer intelligence rollups.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Generator, List, Optional
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -418,3 +418,127 @@ class CustomerService:
             sort_order="desc",
         )
         return res
+
+    @staticmethod
+    def stream_customers_csv(
+        db: Session,
+        segment: Optional[str] = None,
+        risk_tier: Optional[str] = None,
+        retention_priority: Optional[str] = None,
+        state: Optional[str] = None,
+        min_spend: Optional[float] = None,
+        max_spend: Optional[float] = None,
+    ) -> Generator[str, None, None]:
+        """
+        Stream CSV records for CRM/marketing retention campaigns line by line.
+        """
+        import csv
+        import io
+
+        def get_recommended_action(priority: Optional[str], r_tier: Optional[str]) -> str:
+            if priority == "Priority 1: Immediate VIP Retention":
+                return "Dedicated account manager outreach and VIP incentive"
+            elif priority == "Priority 2: Loyalty & Proactive Nurture":
+                return "Personalized loyalty rewards and product recommendations"
+            elif priority == "Priority 3: Automated Winback & Re-engagement":
+                return "Automated email coupon sequence and survey"
+            elif r_tier == "High":
+                return "Reactivation discount and feedback request"
+            elif r_tier == "Medium":
+                return "Feature newsletter and gentle re-engagement"
+            else:
+                return "Standard operational messaging and ongoing nurture"
+
+        # Yield CSV Header
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow([
+            "customer_unique_id",
+            "state",
+            "city",
+            "lifetime_spend",
+            "lifetime_orders",
+            "recency_days",
+            "segment",
+            "churn_probability",
+            "risk_tier",
+            "revenue_at_risk",
+            "retention_priority",
+            "recommended_action",
+        ])
+        yield output.getvalue()
+        output.seek(0)
+        output.truncate(0)
+
+        where_clauses: List[str] = []
+        params: Dict[str, Any] = {}
+
+        if segment:
+            where_clauses.append("r.segment = :segment")
+            params["segment"] = segment.strip()
+        if risk_tier:
+            where_clauses.append("ch.risk_tier = :risk_tier")
+            params["risk_tier"] = risk_tier.strip()
+        if retention_priority:
+            where_clauses.append("ch.retention_priority = :retention_priority")
+            params["retention_priority"] = retention_priority.strip()
+        if state:
+            where_clauses.append("c.state = :state")
+            params["state"] = state.upper().strip()
+        if min_spend is not None:
+            where_clauses.append("c.lifetime_spend >= :min_spend")
+            params["min_spend"] = min_spend
+        if max_spend is not None:
+            where_clauses.append("c.lifetime_spend <= :max_spend")
+            params["max_spend"] = max_spend
+
+        where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+
+        query = text(
+            f"""
+            SELECT
+                c.customer_unique_id,
+                c.state,
+                c.city,
+                c.lifetime_spend,
+                c.lifetime_orders,
+                c.recency_days,
+                r.segment,
+                ch.churn_probability,
+                ch.risk_tier,
+                ch.revenue_at_risk,
+                ch.retention_priority
+            FROM mart.mart_customer_metrics c
+            LEFT JOIN ml.churn_predictions ch ON c.customer_unique_id = ch.customer_unique_id
+            LEFT JOIN ml.rfm_segments r ON c.customer_unique_id = r.customer_unique_id
+            {where_sql}
+            ORDER BY ch.revenue_at_risk DESC NULLS LAST
+            """
+        )
+
+        cursor = db.execute(query, params)
+        batch_size = 1000
+        while True:
+            rows = cursor.fetchmany(batch_size)
+            if not rows:
+                break
+            for row in rows:
+                prio = row[10]  # retention_priority
+                tier = row[8]   # risk_tier
+                writer.writerow([
+                    row[0],   # customer_unique_id
+                    row[1] or "",  # state
+                    row[2] or "",  # city
+                    f"{float(row[3]):.2f}" if row[3] is not None else "0.00",  # lifetime_spend
+                    row[4] or 0,  # lifetime_orders
+                    f"{float(row[5]):.1f}" if row[5] is not None else "",  # recency_days
+                    row[6] or "",  # segment
+                    f"{float(row[7]):.4f}" if row[7] is not None else "",  # churn_probability
+                    tier or "",
+                    f"{float(row[9]):.2f}" if row[9] is not None else "0.00",  # revenue_at_risk
+                    prio or "",
+                    get_recommended_action(prio, tier),
+                ])
+            yield output.getvalue()
+            output.seek(0)
+            output.truncate(0)

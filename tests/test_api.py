@@ -172,6 +172,59 @@ def test_analytics_caching_and_bypass(client: TestClient) -> None:
     assert rar_res.status_code == 200
 
 
+def test_analytics_revenue_trends(client: TestClient) -> None:
+    """GET /api/analytics/revenue should return time-series GMV, volume, and fulfillment trends."""
+    # Monthly default
+    response = client.get("/api/analytics/revenue?interval=month")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["interval"] == "month"
+    assert data["total_periods"] > 20
+    assert len(data["trends"]) > 0
+
+    first = data["trends"][0]
+    assert "period" in first
+    assert "gmv" in first
+    assert "orders_count" in first
+    assert "delivered_count" in first
+    assert "avg_order_value" in first
+    assert "total_freight" in first
+    assert "late_order_rate" in first
+
+    # Weekly interval
+    res_week = client.get("/api/analytics/revenue?interval=week")
+    assert res_week.status_code == 200
+    assert res_week.json()["interval"] == "week"
+
+    # Date range filtering
+    res_filtered = client.get(
+        "/api/analytics/revenue?interval=month&start_date=2017-01-01&end_date=2017-06-30"
+    )
+    assert res_filtered.status_code == 200
+    filtered_data = res_filtered.json()
+    assert 1 <= filtered_data["total_periods"] <= 7
+
+
+def test_analytics_cohort_retention(client: TestClient) -> None:
+    """GET /api/analytics/retention should return cohort survival decay curves."""
+    response = client.get("/api/analytics/retention")
+    assert response.status_code == 200
+    data = response.json()
+
+    assert "total_cohorts" in data
+    assert "cohorts" in data
+    assert data["total_cohorts"] > 15
+
+    # Check a representative cohort
+    first_cohort = data["cohorts"][0]
+    assert "cohort_month" in first_cohort
+    assert "cohort_size" in first_cohort
+    assert "retention_rates" in first_cohort
+    assert first_cohort["cohort_size"] > 0
+    assert first_cohort["retention_rates"]["m0"] == 100.0
+
+
+
 # ===========================================================================
 # 3. Customer Listing & Filtering Endpoints
 # ===========================================================================
@@ -224,6 +277,31 @@ def test_list_customers_filter_risk_tier(client: TestClient) -> None:
     for item in data["items"]:
         assert item["risk_tier"] == "High"
         assert item["churn_probability"] >= 0.70
+
+
+def test_export_customers_csv(client: TestClient) -> None:
+    """GET /api/customers/export should stream valid CSV with customer CRM fields."""
+    response = client.get("/api/customers/export?risk_tier=High&min_spend=100")
+    assert response.status_code == 200
+    assert "text/csv" in response.headers["content-type"]
+    assert "attachment" in response.headers["content-disposition"]
+    assert "mercury_customers_export.csv" in response.headers["content-disposition"]
+
+    lines = response.text.strip().split("\r\n")
+    assert len(lines) > 1  # Header + at least 1 row
+
+    header = lines[0]
+    assert "customer_unique_id" in header
+    assert "lifetime_spend" in header
+    assert "risk_tier" in header
+    assert "retention_priority" in header
+    assert "recommended_action" in header
+
+    # Inspect first row
+    first_row = lines[1].split(",")
+    assert len(first_row) >= 12
+    # risk_tier column should be High
+    assert "High" in first_row[8]
 
 
 def test_list_customers_filter_segment(client: TestClient) -> None:

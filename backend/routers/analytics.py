@@ -7,13 +7,15 @@ RFM customer segmentation breakdown, and financial revenue-at-risk exposure.
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
 from backend.schemas.analytics import (
     PortfolioOverview,
+    RetentionAnalyticsResponse,
+    RevenueAnalyticsResponse,
     RevenueAtRiskOverview,
     SegmentsOverview,
 )
@@ -84,6 +86,48 @@ def get_revenue_at_risk_overview(
     return AnalyticsService.get_revenue_at_risk_overview(
         db, include_top_preview=include_preview, bypass_cache=bypass_cache
     )
+
+
+@router.get(
+    "/revenue",
+    response_model=RevenueAnalyticsResponse,
+    summary="Revenue Trends Time-Series",
+    description=(
+        "Returns chronological gross merchandise value (GMV), order volume, AOV, "
+        "freight expenses, and late delivery rate time-series trends grouped by interval."
+    ),
+)
+def get_revenue_trends(
+    interval: str = Query("month", description="Grouping interval: month, week, or day"),
+    start_date: Optional[str] = Query(None, description="Start date filter (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date filter (YYYY-MM-DD)"),
+    bypass_cache: bool = Query(False, description="Bypass in-memory cache and force live database query"),
+    db: Session = Depends(get_db),
+) -> RevenueAnalyticsResponse:
+    return AnalyticsService.get_revenue_trends(
+        db=db,
+        interval=interval,
+        start_date=start_date,
+        end_date=end_date,
+        bypass_cache=bypass_cache,
+    )
+
+
+@router.get(
+    "/retention",
+    response_model=RetentionAnalyticsResponse,
+    summary="Customer Cohort Retention Analysis",
+    description=(
+        "Returns month-by-month customer cohort survival rates (M+0 to M+12) "
+        "tracking customer retention decay curves based on first purchase acquisition cohorts."
+    ),
+)
+def get_cohort_retention(
+    bypass_cache: bool = Query(False, description="Bypass in-memory cache and force live database query"),
+    db: Session = Depends(get_db),
+) -> RetentionAnalyticsResponse:
+    return AnalyticsService.get_cohort_retention(db=db, bypass_cache=bypass_cache)
+
 
 
 @router.get(

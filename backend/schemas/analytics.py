@@ -52,3 +52,50 @@ class RevenueAtRiskOverview(BaseModel):
     by_risk_tier: List[RiskTierSummary] = Field(..., description="Risk distribution across High, Medium, Low")
     by_retention_priority: List[RetentionPrioritySummary] = Field(..., description="Actionable retention priority segments")
     top_at_risk_preview: Optional[List[CustomerSummary]] = Field(None, description="Top high-value customers at risk")
+
+
+class RevenueTrendPoint(BaseModel):
+    """Historical time-series revenue and fulfillment data point."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    period: str = Field(..., description="Time period label (e.g. '2017-01' or '2017-W14')")
+    gmv: float = Field(..., description="Gross merchandise value (product + freight) in BRL")
+    orders_count: int = Field(..., description="Total orders placed in this period")
+    delivered_count: int = Field(..., description="Orders successfully delivered in this period")
+    avg_order_value: float = Field(..., description="Average order value in BRL")
+    total_freight: float = Field(..., description="Total shipping freight charges in BRL")
+    late_order_rate: float = Field(..., description="Percentage of orders delivered past estimated date")
+
+
+class RevenueAnalyticsResponse(BaseModel):
+    """Time-series revenue trends response with summary metadata."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    interval: str = Field(..., description="Granularity interval: 'month', 'week', or 'day'")
+    total_periods: int = Field(..., description="Number of historical time periods returned")
+    trends: List[RevenueTrendPoint] = Field(..., description="Ordered chronological trend data points")
+
+
+class CohortRetentionPoint(BaseModel):
+    """Customer cohort retention rates over month-by-month survival lifecycle."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    cohort_month: str = Field(..., description="Acquisition cohort month in YYYY-MM format")
+    cohort_size: int = Field(..., description="Total distinct customers acquired in this cohort month")
+    retention_rates: dict[str, float] = Field(
+        ...,
+        description="Retention survival rates indexed by month offset (e.g. {'m0': 100.0, 'm1': 4.2})",
+    )
+
+
+class RetentionAnalyticsResponse(BaseModel):
+    """Comprehensive cohort retention curves across acquisition months."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    total_cohorts: int = Field(..., description="Total customer acquisition cohorts analyzed")
+    cohorts: List[CohortRetentionPoint] = Field(..., description="Cohort retention survival matrices")
+

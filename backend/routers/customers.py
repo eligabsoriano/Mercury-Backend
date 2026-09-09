@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
@@ -103,6 +104,41 @@ def get_customer_segments_alias(
     db: Session = Depends(get_db),
 ) -> SegmentsOverview:
     return AnalyticsService.get_segments_overview(db, bypass_cache=bypass_cache)
+
+
+@router.get(
+    "/export",
+    summary="Export Customers for CRM Campaigns (Streaming CSV)",
+    description=(
+        "Streams a formatted CSV export of customers with lifetime spend, churn risk tier, "
+        "retention priority, and recommended action based on applied filters."
+    ),
+)
+def export_customers_csv(
+    segment: Optional[str] = Query(None, description="Filter by RFM segment"),
+    risk_tier: Optional[str] = Query(None, description="Filter by churn risk tier (High, Medium, Low)"),
+    retention_priority: Optional[str] = Query(None, description="Filter by retention priority action"),
+    state: Optional[str] = Query(None, description="Filter by 2-letter state abbreviation"),
+    min_spend: Optional[float] = Query(None, ge=0.0, description="Minimum lifetime spend in BRL"),
+    max_spend: Optional[float] = Query(None, ge=0.0, description="Maximum lifetime spend in BRL"),
+    format: str = Query("csv", description="Export format (csv)"),
+    db: Session = Depends(get_db),
+) -> StreamingResponse:
+    generator = CustomerService.stream_customers_csv(
+        db=db,
+        segment=segment,
+        risk_tier=risk_tier,
+        retention_priority=retention_priority,
+        state=state,
+        min_spend=min_spend,
+        max_spend=max_spend,
+    )
+    return StreamingResponse(
+        generator,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=mercury_customers_export.csv"},
+    )
+
 
 
 @router.get(

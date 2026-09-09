@@ -118,11 +118,33 @@ Snapshot date: 2026-09-06.
     - `GET /api/analytics/cache/stats`: Telemetry on cache hits, misses, bypasses, evictions, active items, and hit ratio percentage.
     - `POST /api/analytics/cache/clear`: Purges active cache entries on demand.
 - Validated with **10 out of 10 tests passing** in `tests/test_cache.py`.
-- Validated with **22 out of 22 tests passing** in `tests/test_api.py` including caching and bypass verification.
-- Full project test suite: **105 out of 105 tests passing** across 7 test suites.
+- Validated with **25 out of 25 tests passing** in `tests/test_api.py`.
+- Validated with **6 out of 6 tests passing** in `tests/test_sellers.py`.
+- Validated with **6 out of 6 tests passing** in `tests/test_products.py`.
+- Full project test suite: **120 out of 120 tests passing** across 9 test suites.
+
+### 12. Domain & Analytical Endpoints (Phase 1 — ✅ Complete)
+- Application Architecture:
+  - `backend/schemas/analytics.py`: Added `RevenueTrendPoint`, `RevenueAnalyticsResponse`, `CohortRetentionPoint`, and `RetentionAnalyticsResponse`.
+  - `backend/schemas/seller.py`: New schemas `SellerSummary`, `SellerDetail`, and `SellerListResponse`.
+  - `backend/schemas/product.py`: New schemas `ProductSummary`, `CategorySummary`, `ProductListResponse`, and `CategoryListResponse`.
+  - `backend/services/analytics_service.py`: Added `get_revenue_trends` and `get_cohort_retention` (both cached with TTL 300s).
+  - `backend/services/seller_service.py`: New `SellerService` with paginated seller listings, state filters, sort orders, and seller 360 profiles with top categories.
+  - `backend/services/product_service.py`: New `ProductService` with paginated catalog search, category aggregation, and product 360 scorecards.
+  - `backend/services/customer_service.py`: Added `stream_customers_csv` generator for high-efficiency campaign export streaming.
+  - `backend/routers/analytics.py`: Added `GET /api/analytics/revenue` and `GET /api/analytics/retention`.
+  - `backend/routers/sellers.py`: New `sellers_router` with `GET /api/sellers` and `GET /api/sellers/{id}`.
+  - `backend/routers/products.py`: New `products_router` with `GET /api/products`, `GET /api/products/categories`, and `GET /api/products/{id}`.
+  - `backend/routers/customers.py`: Added `GET /api/customers/export` streaming CSV endpoint.
+  - `backend/main.py`: Registered all routers and updated OpenAPI metadata and root navigation map.
+- Validated with **25 out of 25 tests passing** in `tests/test_api.py`.
+- Validated with **6 out of 6 tests passing** in `tests/test_sellers.py`.
+- Validated with **6 out of 6 tests passing** in `tests/test_products.py`.
+- Full project test suite: **120 out of 120 tests passing** across 9 test suites.
 
 ---
 
 ## Next Steps
-- Implement remaining Phase 1 endpoints: Revenue time-series, cohort retention curves, seller intelligence, product catalog intelligence, and CSV export.
-- Implement Phase 3: Production Hardening & API Security (API key/Bearer auth, rate limiting, request tracing).
+- Implement Phase 3: Production Hardening & API Security (API key / Bearer auth dependency, rate limiting, request tracing).
+- Implement Phase 4: Containerization & Cloud Deployment (`Dockerfile`, `docker-compose.yml`, `render.yaml`).
+- Implement Phase 5: Automated CI/CD Pipeline (`.github/workflows/ci.yml`).

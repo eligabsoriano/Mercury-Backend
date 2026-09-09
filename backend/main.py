@@ -16,7 +16,13 @@ from fastapi.responses import JSONResponse
 
 from backend.config import get_settings
 from backend.database import check_db_connection
-from backend.routers import analytics_router, customers_router, health_router
+from backend.routers import (
+    analytics_router,
+    customers_router,
+    health_router,
+    products_router,
+    sellers_router,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -58,6 +64,14 @@ app = FastAPI(
             "description": "Paginated customer listings, multi-faceted filters, at-risk queues, and 360-degree profiles.",
         },
         {
+            "name": "Products",
+            "description": "Product catalog intelligence, category breakdown, sales velocity, and review scores.",
+        },
+        {
+            "name": "Sellers",
+            "description": "Marketplace seller performance scorecards, delivery delay rates, and seller directories.",
+        },
+        {
             "name": "Health",
             "description": "System health and database connectivity diagnostics.",
         },
@@ -77,6 +91,8 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(analytics_router)
 app.include_router(customers_router)
+app.include_router(products_router)
+app.include_router(sellers_router)
 
 
 @app.get("/", summary="API Root & Navigation Index", tags=["Health"])
@@ -97,8 +113,14 @@ def root_index() -> JSONResponse:
                 "portfolio_overview": "/api/analytics/overview",
                 "rfm_segments": "/api/analytics/segments",
                 "revenue_at_risk": "/api/analytics/revenue-at-risk",
+                "revenue_trends": "/api/analytics/revenue",
+                "cohort_retention": "/api/analytics/retention",
                 "customers": "/api/customers",
                 "at_risk_queue": "/api/customers/at-risk",
+                "customer_export": "/api/customers/export",
+                "products": "/api/products",
+                "product_categories": "/api/products/categories",
+                "sellers": "/api/sellers",
             },
         }
     )
