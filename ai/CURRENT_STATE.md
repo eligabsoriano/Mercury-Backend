@@ -142,9 +142,27 @@ Snapshot date: 2026-09-06.
 - Validated with **6 out of 6 tests passing** in `tests/test_products.py`.
 - Full project test suite: **120 out of 120 tests passing** across 9 test suites.
 
+### 13. Production Hardening & API Security (Phase 3 — ✅ Complete)
+- Application Architecture:
+  - `backend/config.py`: Added runtime configurations for `REQUIRE_AUTH`, `API_KEYS`, `JWT_SECRET_KEY`, `JWT_ALGORITHM`, `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`, `RATE_LIMIT_ENABLED`, and `RATE_LIMIT_REQUESTS_PER_MINUTE`.
+  - `backend/security.py`: Dual-scheme authentication engine:
+    - `X-API-Key` header authentication matching configurable pre-shared keys with constant-time equality comparisons.
+    - Bearer JWT authentication with standard base64url HMAC-SHA256 signing and verification (`create_access_token`, `decode_access_token`).
+    - FastAPI dependency `verify_auth` enforcing authentication when `REQUIRE_AUTH=true` while exempting public endpoints (`/`, `/health`, `/api/health`, `/docs`, `/redoc`, `/openapi.json`, `/api/auth/token`). In local dev/test (`REQUIRE_AUTH=false`), passes through as an authenticated developer context.
+    - Identity introspection dependency `get_current_user`.
+  - `backend/rate_limit.py`: In-memory sliding-window rate limiter utilizing high-resolution monotonic timestamps (`time.monotonic()`) and `threading.RLock`. Respects `X-Forwarded-For` and `X-Real-IP` proxies.
+  - `backend/middleware.py`: ASGI middleware `RequestTracingAndSecurityMiddleware`:
+    - Generates or preserves incoming `X-Request-ID` across all requests and responses.
+    - Calculates execution latency via `time.perf_counter()` and attaches `X-Process-Time` (e.g. `12.34ms`).
+    - Enforces rate limiting on non-exempt routes, returning HTTP 429 Too Many Requests with `Retry-After` header.
+    - Emits structured access logs under `mercury.access`.
+    - Intercepts unhandled exceptions to return HTTP 500 while preserving the unique `X-Request-ID` trace.
+  - `backend/schemas/auth.py` & `backend/routers/auth.py`: Token generation route `POST /api/auth/token` and caller profile route `GET /api/auth/me`.
+- Validated with **18 out of 18 tests passing** in `tests/test_security.py`.
+- Full project test suite: **138 out of 138 tests passing** across 10 test suites.
+
 ---
 
 ## Next Steps
-- Implement Phase 3: Production Hardening & API Security (API key / Bearer auth dependency, rate limiting, request tracing).
 - Implement Phase 4: Containerization & Cloud Deployment (`Dockerfile`, `docker-compose.yml`, `render.yaml`).
 - Implement Phase 5: Automated CI/CD Pipeline (`.github/workflows/ci.yml`).

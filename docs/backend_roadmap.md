@@ -142,19 +142,29 @@ graph TD
 
 ---
 
-### Phase 3: Production Hardening & API Security
+### Phase 3: Production Hardening & API Security (✅ Complete)
 
-#### 3.1 Security & Authentication Dependency
-- Create `backend/security.py` with support for:
-  - Header-based API key: `X-API-Key`
-  - Bearer token: `Authorization: Bearer <token>`
-  - Configurable via `.env`: `REQUIRE_AUTH=false` for local development, `true` in production.
+#### 3.1 Security & Authentication Dependency (✅ Complete)
+- Created `backend/security.py` with dual authentication support:
+  - Header-based API key: `X-API-Key` validated against configurable `API_KEYS` in `backend/config.py`.
+  - Bearer token: `Authorization: Bearer <token>` using pure standard-library HMAC-SHA256 JWT tokens (`create_access_token`, `decode_access_token`) with claim verification (`sub`, `exp`, `iat`, `iss`).
+  - Configurable via `.env`: `REQUIRE_AUTH=false` for local development/testing (dev bypass) and `true` in staging/production.
+  - Public endpoint exemption: `/`, `/health`, `/api/health`, `/docs`, `/redoc`, `/openapi.json`, and `/api/auth/token` remain accessible without credentials.
+  - Added token issuance route `POST /api/auth/token` and caller inspection `GET /api/auth/me` in `backend/routers/auth.py`.
 
-#### 3.2 Rate Limiting
-- Add rate limiting middleware to prevent endpoint flooding and protect database connection limits.
+#### 3.2 Rate Limiting (✅ Complete)
+- Built high-performance in-memory sliding-window rate limiter in `backend/rate_limit.py` using high-resolution monotonic timestamps (`time.monotonic()`) and `threading.RLock`.
+- Configurable thresholds via `RATE_LIMIT_ENABLED` and `RATE_LIMIT_REQUESTS_PER_MINUTE` (default: 120 req/min).
+- Client IP resolution extracts client IP respecting `X-Forwarded-For` (first proxy hop) and `X-Real-IP` with fallback to `request.client.host`.
+- Returns standard HTTP 429 Too Many Requests with `Retry-After`, `X-RateLimit-Limit`, and `X-RateLimit-Remaining: 0` headers.
 
-#### 3.3 Request Tracing & Performance Logging
-- Add ASGI middleware to attach a unique `X-Request-ID` and calculate `X-Process-Time` (in milliseconds) for every request header.
+#### 3.3 Request Tracing & Performance Logging (✅ Complete)
+- Implemented ASGI middleware `RequestTracingAndSecurityMiddleware` in `backend/middleware.py`:
+  - Automatically generates unique UUID4 `X-Request-ID` or preserves incoming tracing header.
+  - Measures request latency via `time.perf_counter()` and attaches `X-Process-Time` (e.g. `12.34ms`) to every response.
+  - Emits structured access logs to `mercury.access` recording client IP, HTTP method, route, status code, latency, and request ID.
+  - Intercepts unhandled 500 errors and ensures `X-Request-ID` is preserved in error response for distributed debugging.
+- Validated with 18 comprehensive tests in `tests/test_security.py` covering tracing, rate limiting, token generation, and authentication enforcement.
 
 ---
 

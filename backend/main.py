@@ -10,19 +10,22 @@ import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from backend.config import get_settings
 from backend.database import check_db_connection
+from backend.middleware import RequestTracingAndSecurityMiddleware
 from backend.routers import (
     analytics_router,
+    auth_router,
     customers_router,
     health_router,
     products_router,
     sellers_router,
 )
+from backend.security import verify_auth
 
 logging.basicConfig(
     level=logging.INFO,
@@ -51,10 +54,15 @@ app = FastAPI(
     version=settings.app_version,
     description=settings.app_description,
     lifespan=lifespan,
+    dependencies=[Depends(verify_auth)],
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
     openapi_tags=[
+        {
+            "name": "Authentication",
+            "description": "Token grant, credential verification, and identity introspection.",
+        },
         {
             "name": "Analytics",
             "description": "Macro-level portfolio KPIs, RFM segment breakdowns, and revenue-at-risk exposure.",
@@ -87,8 +95,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Attach request tracing, performance measurement, and rate limiting middleware
+app.add_middleware(RequestTracingAndSecurityMiddleware)
+
 # Register route modules
 app.include_router(health_router)
+app.include_router(auth_router)
 app.include_router(analytics_router)
 app.include_router(customers_router)
 app.include_router(products_router)
@@ -110,6 +122,8 @@ def root_index() -> JSONResponse:
             },
             "endpoints": {
                 "health": "/health",
+                "auth_token": "/api/auth/token",
+                "auth_identity": "/api/auth/me",
                 "portfolio_overview": "/api/analytics/overview",
                 "rfm_segments": "/api/analytics/segments",
                 "revenue_at_risk": "/api/analytics/revenue-at-risk",

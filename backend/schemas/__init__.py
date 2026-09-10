@@ -27,6 +27,11 @@ from backend.schemas.customer import (
     CustomerReviewMetrics,
     CustomerSummary,
 )
+from backend.schemas.auth import (
+    TokenRequest,
+    TokenResponse,
+    UserIdentity,
+)
 from backend.schemas.rfm import (
     RFMScorecard,
     SegmentDistribution,
@@ -50,4 +55,7 @@ __all__ = [
     "PortfolioOverview",
     "SegmentsOverview",
     "RevenueAtRiskOverview",
+    "TokenRequest",
+    "TokenResponse",
+    "UserIdentity",
 ]

@@ -5,6 +5,7 @@ API route handlers for Mercury application.
 """
 
 from backend.routers.analytics import router as analytics_router
+from backend.routers.auth import auth_router
 from backend.routers.customers import router as customers_router
 from backend.routers.health import router as health_router
 from backend.routers.products import router as products_router
@@ -16,4 +17,5 @@ __all__ = [
     "customers_router",
     "products_router",
     "sellers_router",
+    "auth_router",
 ]
