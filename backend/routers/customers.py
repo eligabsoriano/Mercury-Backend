@@ -8,6 +8,7 @@ at-risk retention queues, and 360-degree customer intelligence profiles.
 from __future__ import annotations
 
 from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -39,9 +40,15 @@ def list_customers(
     page: int = Query(1, ge=1, description="Page number (1-indexed)"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page (max 100)"),
     segment: Optional[str] = Query(None, description="Filter by RFM segment"),
-    risk_tier: Optional[str] = Query(None, description="Filter by Churn Risk Tier (High, Medium, Low)"),
-    retention_priority: Optional[str] = Query(None, description="Filter by Retention Priority Action"),
-    state: Optional[str] = Query(None, description="Filter by 2-letter state abbreviation (e.g. SP, RJ)"),
+    risk_tier: Optional[str] = Query(
+        None, description="Filter by Churn Risk Tier (High, Medium, Low)"
+    ),
+    retention_priority: Optional[str] = Query(
+        None, description="Filter by Retention Priority Action"
+    ),
+    state: Optional[str] = Query(
+        None, description="Filter by 2-letter state abbreviation (e.g. SP, RJ)"
+    ),
     min_spend: Optional[float] = Query(None, ge=0.0, description="Minimum lifetime spend in BRL"),
     max_spend: Optional[float] = Query(None, ge=0.0, description="Maximum lifetime spend in BRL"),
     search: Optional[str] = Query(None, description="Search by customer_unique_id"),
@@ -81,7 +88,9 @@ def get_at_risk_customers(
     page: int = Query(1, ge=1, description="Page number (1-indexed)"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page (max 100)"),
     risk_tier: Optional[str] = Query(None, description="Filter risk tier (High or Medium)"),
-    retention_priority: Optional[str] = Query(None, description="Filter by retention priority action"),
+    retention_priority: Optional[str] = Query(
+        None, description="Filter by retention priority action"
+    ),
     db: Session = Depends(get_db),
 ) -> CustomerListResponse:
     return CustomerService.get_at_risk_customers(
@@ -100,7 +109,9 @@ def get_at_risk_customers(
     description="Returns aggregate RFM customer segmentation summary.",
 )
 def get_customer_segments_alias(
-    bypass_cache: bool = Query(False, description="Bypass in-memory cache and force live database query"),
+    bypass_cache: bool = Query(
+        False, description="Bypass in-memory cache and force live database query"
+    ),
     db: Session = Depends(get_db),
 ) -> SegmentsOverview:
     return AnalyticsService.get_segments_overview(db, bypass_cache=bypass_cache)
@@ -116,8 +127,12 @@ def get_customer_segments_alias(
 )
 def export_customers_csv(
     segment: Optional[str] = Query(None, description="Filter by RFM segment"),
-    risk_tier: Optional[str] = Query(None, description="Filter by churn risk tier (High, Medium, Low)"),
-    retention_priority: Optional[str] = Query(None, description="Filter by retention priority action"),
+    risk_tier: Optional[str] = Query(
+        None, description="Filter by churn risk tier (High, Medium, Low)"
+    ),
+    retention_priority: Optional[str] = Query(
+        None, description="Filter by retention priority action"
+    ),
     state: Optional[str] = Query(None, description="Filter by 2-letter state abbreviation"),
     min_spend: Optional[float] = Query(None, ge=0.0, description="Minimum lifetime spend in BRL"),
     max_spend: Optional[float] = Query(None, ge=0.0, description="Maximum lifetime spend in BRL"),
@@ -138,7 +153,6 @@ def export_customers_csv(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=mercury_customers_export.csv"},
     )
-
 
 
 @router.get(

@@ -39,7 +39,11 @@ RATE_LIMIT_EXEMPT_PATHS: Set[str] = {
 def is_rate_limit_exempt(path: str) -> bool:
     """Checks if request path should bypass rate limiting."""
     clean_path = path.rstrip("/") if path != "/" else "/"
-    return clean_path in RATE_LIMIT_EXEMPT_PATHS or path.startswith("/docs") or path.startswith("/redoc")
+    return (
+        clean_path in RATE_LIMIT_EXEMPT_PATHS
+        or path.startswith("/docs")
+        or path.startswith("/redoc")
+    )
 
 
 class RequestTracingAndSecurityMiddleware(BaseHTTPMiddleware):
@@ -48,7 +52,9 @@ class RequestTracingAndSecurityMiddleware(BaseHTTPMiddleware):
     applies rate limiting, and emits structured access logs.
     """
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Response]) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Response]
+    ) -> Response:
         # 1. Resolve or generate request tracing ID
         incoming_req_id = request.headers.get("x-request-id")
         request_id = incoming_req_id.strip() if incoming_req_id else str(uuid.uuid4())

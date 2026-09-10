@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Dict, Generator, List, Optional
+
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -154,15 +155,21 @@ class CustomerService:
                 first_purchased_at=r["first_purchased_at"],
                 latest_purchased_at=r["latest_purchased_at"],
                 recency_days=float(r["recency_days"]) if r["recency_days"] is not None else None,
-                customer_lifespan_days=float(r["customer_lifespan_days"]) if r["customer_lifespan_days"] is not None else None,
+                customer_lifespan_days=float(r["customer_lifespan_days"])
+                if r["customer_lifespan_days"] is not None
+                else None,
                 lifetime_orders=int(r["lifetime_orders"]),
                 is_repeat_buyer=int(r["is_repeat_buyer"]),
                 lifetime_spend=round(float(r["lifetime_spend"]), 2),
                 avg_order_value=round(float(r["avg_order_value"]), 2),
                 segment=r["segment"],
-                churn_probability=float(r["churn_probability"]) if r["churn_probability"] is not None else None,
+                churn_probability=float(r["churn_probability"])
+                if r["churn_probability"] is not None
+                else None,
                 risk_tier=r["risk_tier"],
-                revenue_at_risk=float(r["revenue_at_risk"]) if r["revenue_at_risk"] is not None else None,
+                revenue_at_risk=float(r["revenue_at_risk"])
+                if r["revenue_at_risk"] is not None
+                else None,
                 retention_priority=r["retention_priority"],
             )
             for r in rows
@@ -172,9 +179,7 @@ class CustomerService:
         return CustomerListResponse(items=items, pagination=pagination)
 
     @staticmethod
-    def get_customer_detail(
-        db: Session, customer_unique_id: str
-    ) -> Optional[CustomerDetail]:
+    def get_customer_detail(db: Session, customer_unique_id: str) -> Optional[CustomerDetail]:
         """
         Fetch full 360-degree customer intelligence detail including
         basket composition, fulfillment friction, review sentiment,
@@ -247,8 +252,12 @@ class CustomerService:
         )
 
         fulfillment = CustomerFulfillmentMetrics(
-            avg_delivery_delay_days=float(row["avg_delivery_delay_days"]) if row["avg_delivery_delay_days"] is not None else None,
-            max_delivery_delay_days=float(row["max_delivery_delay_days"]) if row["max_delivery_delay_days"] is not None else None,
+            avg_delivery_delay_days=float(row["avg_delivery_delay_days"])
+            if row["avg_delivery_delay_days"] is not None
+            else None,
+            max_delivery_delay_days=float(row["max_delivery_delay_days"])
+            if row["max_delivery_delay_days"] is not None
+            else None,
             late_orders_count=int(row["late_orders_count"] or 0),
             late_order_ratio=float(row["late_order_ratio"] or 0.0),
             has_late_delivery=int(row["has_late_delivery"] or 0),
@@ -256,7 +265,9 @@ class CustomerService:
 
         reviews = CustomerReviewMetrics(
             total_reviews_submitted=int(row["total_reviews_submitted"] or 0),
-            avg_review_score=float(row["avg_review_score"]) if row["avg_review_score"] is not None else None,
+            avg_review_score=float(row["avg_review_score"])
+            if row["avg_review_score"] is not None
+            else None,
             negative_reviews_count=int(row["negative_reviews_count"] or 0),
             positive_reviews_count=int(row["positive_reviews_count"] or 0),
             has_negative_review=int(row["has_negative_review"] or 0),
@@ -302,7 +313,9 @@ class CustomerService:
             first_purchased_at=row["first_purchased_at"],
             latest_purchased_at=row["latest_purchased_at"],
             recency_days=float(row["recency_days"]) if row["recency_days"] is not None else None,
-            customer_lifespan_days=float(row["customer_lifespan_days"]) if row["customer_lifespan_days"] is not None else None,
+            customer_lifespan_days=float(row["customer_lifespan_days"])
+            if row["customer_lifespan_days"] is not None
+            else None,
             lifetime_orders=int(row["lifetime_orders"] or 0),
             is_repeat_buyer=int(row["is_repeat_buyer"] or 0),
             lifetime_spend=round(float(row["lifetime_spend"] or 0.0), 2),
@@ -317,9 +330,7 @@ class CustomerService:
         )
 
     @staticmethod
-    def get_customer_rfm(
-        db: Session, customer_unique_id: str
-    ) -> Optional[RFMScorecard]:
+    def get_customer_rfm(db: Session, customer_unique_id: str) -> Optional[RFMScorecard]:
         """Fetch RFM scorecard directly from ml.rfm_segments."""
         query = text(
             """
@@ -358,9 +369,7 @@ class CustomerService:
         )
 
     @staticmethod
-    def get_customer_churn(
-        db: Session, customer_unique_id: str
-    ) -> Optional[ChurnPrediction]:
+    def get_customer_churn(db: Session, customer_unique_id: str) -> Optional[ChurnPrediction]:
         """Fetch Churn prediction directly from ml.churn_predictions."""
         query = text(
             """
@@ -452,20 +461,22 @@ class CustomerService:
         # Yield CSV Header
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow([
-            "customer_unique_id",
-            "state",
-            "city",
-            "lifetime_spend",
-            "lifetime_orders",
-            "recency_days",
-            "segment",
-            "churn_probability",
-            "risk_tier",
-            "revenue_at_risk",
-            "retention_priority",
-            "recommended_action",
-        ])
+        writer.writerow(
+            [
+                "customer_unique_id",
+                "state",
+                "city",
+                "lifetime_spend",
+                "lifetime_orders",
+                "recency_days",
+                "segment",
+                "churn_probability",
+                "risk_tier",
+                "revenue_at_risk",
+                "retention_priority",
+                "recommended_action",
+            ]
+        )
         yield output.getvalue()
         output.seek(0)
         output.truncate(0)
@@ -524,21 +535,23 @@ class CustomerService:
                 break
             for row in rows:
                 prio = row[10]  # retention_priority
-                tier = row[8]   # risk_tier
-                writer.writerow([
-                    row[0],   # customer_unique_id
-                    row[1] or "",  # state
-                    row[2] or "",  # city
-                    f"{float(row[3]):.2f}" if row[3] is not None else "0.00",  # lifetime_spend
-                    row[4] or 0,  # lifetime_orders
-                    f"{float(row[5]):.1f}" if row[5] is not None else "",  # recency_days
-                    row[6] or "",  # segment
-                    f"{float(row[7]):.4f}" if row[7] is not None else "",  # churn_probability
-                    tier or "",
-                    f"{float(row[9]):.2f}" if row[9] is not None else "0.00",  # revenue_at_risk
-                    prio or "",
-                    get_recommended_action(prio, tier),
-                ])
+                tier = row[8]  # risk_tier
+                writer.writerow(
+                    [
+                        row[0],  # customer_unique_id
+                        row[1] or "",  # state
+                        row[2] or "",  # city
+                        f"{float(row[3]):.2f}" if row[3] is not None else "0.00",  # lifetime_spend
+                        row[4] or 0,  # lifetime_orders
+                        f"{float(row[5]):.1f}" if row[5] is not None else "",  # recency_days
+                        row[6] or "",  # segment
+                        f"{float(row[7]):.4f}" if row[7] is not None else "",  # churn_probability
+                        tier or "",
+                        f"{float(row[9]):.2f}" if row[9] is not None else "0.00",  # revenue_at_risk
+                        prio or "",
+                        get_recommended_action(prio, tier),
+                    ]
+                )
             yield output.getvalue()
             output.seek(0)
             output.truncate(0)

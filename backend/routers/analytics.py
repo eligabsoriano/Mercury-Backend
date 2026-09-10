@@ -8,6 +8,7 @@ RFM customer segmentation breakdown, and financial revenue-at-risk exposure.
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
@@ -34,7 +35,9 @@ router = APIRouter(prefix="/api/analytics", tags=["Analytics"])
     ),
 )
 def get_portfolio_overview(
-    bypass_cache: bool = Query(False, description="Bypass in-memory cache and force live database query"),
+    bypass_cache: bool = Query(
+        False, description="Bypass in-memory cache and force live database query"
+    ),
     db: Session = Depends(get_db),
 ) -> PortfolioOverview:
     return AnalyticsService.get_portfolio_overview(db, bypass_cache=bypass_cache)
@@ -50,7 +53,9 @@ def get_portfolio_overview(
     ),
 )
 def get_segments_overview(
-    bypass_cache: bool = Query(False, description="Bypass in-memory cache and force live database query"),
+    bypass_cache: bool = Query(
+        False, description="Bypass in-memory cache and force live database query"
+    ),
     db: Session = Depends(get_db),
 ) -> SegmentsOverview:
     return AnalyticsService.get_segments_overview(db, bypass_cache=bypass_cache)
@@ -63,7 +68,9 @@ def get_segments_overview(
     description="Convenience alias returning RFM segment distributions.",
 )
 def get_rfm_overview(
-    bypass_cache: bool = Query(False, description="Bypass in-memory cache and force live database query"),
+    bypass_cache: bool = Query(
+        False, description="Bypass in-memory cache and force live database query"
+    ),
     db: Session = Depends(get_db),
 ) -> SegmentsOverview:
     return AnalyticsService.get_segments_overview(db, bypass_cache=bypass_cache)
@@ -80,7 +87,9 @@ def get_rfm_overview(
 )
 def get_revenue_at_risk_overview(
     include_preview: bool = Query(True, description="Include top 5 at-risk customer preview"),
-    bypass_cache: bool = Query(False, description="Bypass in-memory cache and force live database query"),
+    bypass_cache: bool = Query(
+        False, description="Bypass in-memory cache and force live database query"
+    ),
     db: Session = Depends(get_db),
 ) -> RevenueAtRiskOverview:
     return AnalyticsService.get_revenue_at_risk_overview(
@@ -101,7 +110,9 @@ def get_revenue_trends(
     interval: str = Query("month", description="Grouping interval: month, week, or day"),
     start_date: Optional[str] = Query(None, description="Start date filter (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date filter (YYYY-MM-DD)"),
-    bypass_cache: bool = Query(False, description="Bypass in-memory cache and force live database query"),
+    bypass_cache: bool = Query(
+        False, description="Bypass in-memory cache and force live database query"
+    ),
     db: Session = Depends(get_db),
 ) -> RevenueAnalyticsResponse:
     return AnalyticsService.get_revenue_trends(
@@ -123,11 +134,12 @@ def get_revenue_trends(
     ),
 )
 def get_cohort_retention(
-    bypass_cache: bool = Query(False, description="Bypass in-memory cache and force live database query"),
+    bypass_cache: bool = Query(
+        False, description="Bypass in-memory cache and force live database query"
+    ),
     db: Session = Depends(get_db),
 ) -> RetentionAnalyticsResponse:
     return AnalyticsService.get_cohort_retention(db=db, bypass_cache=bypass_cache)
-
 
 
 @router.get(

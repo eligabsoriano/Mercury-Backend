@@ -42,20 +42,34 @@ class Settings:
         self.db_pool_timeout: int = int(os.getenv("DB_POOL_TIMEOUT", "30"))
 
         # In-memory TTL caching configuration
-        self.cache_enabled: bool = os.getenv("CACHE_ENABLED", "true").lower() in ("true", "1", "yes")
+        self.cache_enabled: bool = os.getenv("CACHE_ENABLED", "true").lower() in (
+            "true",
+            "1",
+            "yes",
+        )
         self.cache_default_ttl: int = int(os.getenv("CACHE_DEFAULT_TTL_SECONDS", "300"))
 
         # Security & Authentication settings
         self.require_auth: bool = os.getenv("REQUIRE_AUTH", "false").lower() in ("true", "1", "yes")
         raw_api_keys = os.getenv("API_KEYS", "mercury_test_api_key_12345,mercury_admin_key_67890")
         self.api_keys: List[str] = [k.strip() for k in raw_api_keys.split(",") if k.strip()]
-        self.jwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "mercury-super-secret-production-key-change-me")
+        self.jwt_secret_key: str = os.getenv(
+            "JWT_SECRET_KEY", "mercury-super-secret-production-key-change-me"
+        )
         self.jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
-        self.jwt_access_token_expire_minutes: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+        self.jwt_access_token_expire_minutes: int = int(
+            os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "60")
+        )
 
         # Rate limiting settings
-        self.rate_limit_enabled: bool = os.getenv("RATE_LIMIT_ENABLED", "true").lower() in ("true", "1", "yes")
-        self.rate_limit_requests_per_minute: int = int(os.getenv("RATE_LIMIT_REQUESTS_PER_MINUTE", "120"))
+        self.rate_limit_enabled: bool = os.getenv("RATE_LIMIT_ENABLED", "true").lower() in (
+            "true",
+            "1",
+            "yes",
+        )
+        self.rate_limit_requests_per_minute: int = int(
+            os.getenv("RATE_LIMIT_REQUESTS_PER_MINUTE", "120")
+        )
 
         # CORS configuration
         raw_origins = os.getenv("CORS_ORIGINS", "*")

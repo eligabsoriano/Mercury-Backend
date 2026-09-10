@@ -8,7 +8,6 @@ error handling, filtering, and database query executions.
 
 from __future__ import annotations
 
-import os
 import pytest
 from fastapi.testclient import TestClient
 
@@ -25,6 +24,7 @@ def client() -> TestClient:
 # ===========================================================================
 # 1. Health & Documentation Endpoints
 # ===========================================================================
+
 
 def test_root_index(client: TestClient) -> None:
     """GET / should return 200 with service metadata and documentation links."""
@@ -63,6 +63,7 @@ def test_openapi_spec(client: TestClient) -> None:
 # ===========================================================================
 # 2. Portfolio Analytics Endpoints
 # ===========================================================================
+
 
 def test_analytics_overview(client: TestClient) -> None:
     """GET /api/analytics/overview should return macro-level portfolio KPIs."""
@@ -224,10 +225,10 @@ def test_analytics_cohort_retention(client: TestClient) -> None:
     assert first_cohort["retention_rates"]["m0"] == 100.0
 
 
-
 # ===========================================================================
 # 3. Customer Listing & Filtering Endpoints
 # ===========================================================================
+
 
 def test_list_customers_default_pagination(client: TestClient) -> None:
     """GET /api/customers should return first page with default page_size=20."""
@@ -355,6 +356,7 @@ def test_list_customers_search(client: TestClient) -> None:
 # 4. At-Risk Queue & Convenience Endpoints
 # ===========================================================================
 
+
 def test_customers_at_risk_queue(client: TestClient) -> None:
     """GET /api/customers/at-risk should return queue ordered by revenue_at_risk DESC."""
     response = client.get("/api/customers/at-risk?page_size=10")
@@ -378,6 +380,7 @@ def test_customers_segments_convenience_alias(client: TestClient) -> None:
 # ===========================================================================
 # 5. Customer 360 Detail, RFM & Churn Single-Customer Endpoints
 # ===========================================================================
+
 
 def test_customer_detail_success_and_404(client: TestClient) -> None:
     """GET /api/customers/{id} should return 360 detail for valid customer, 404 for missing."""
@@ -447,6 +450,7 @@ def test_customer_churn_prediction_and_404(client: TestClient) -> None:
 # ===========================================================================
 # 6. Parameter Validation & Edge Cases
 # ===========================================================================
+
 
 def test_pagination_validation_errors(client: TestClient) -> None:
     """Query parameter validation should return 422 for illegal page or page_size."""

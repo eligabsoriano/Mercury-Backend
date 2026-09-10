@@ -20,9 +20,6 @@ from backend.cache import (
     InMemoryTTLCache,
     cached,
     clear_cache,
-    get_cache,
-    get_cache_stats,
-    make_cache_key,
 )
 
 

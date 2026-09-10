@@ -1,0 +1,24 @@
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+]
+ignore = [
+    "E501", # line too long (handled by ruff format)
+    "E402", # module level import not at top of file (some test files load env first)
+    "W291", # trailing whitespace in multiline strings / docstrings
+    "W293", # blank line contains whitespace
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["backend", "ml", "etl"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

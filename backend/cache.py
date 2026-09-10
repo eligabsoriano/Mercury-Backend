@@ -186,6 +186,7 @@ def _is_unhashable_or_transient(obj: Any) -> bool:
     """
     try:
         from sqlalchemy.orm import Session
+
         if isinstance(obj, Session):
             return True
     except ImportError:
@@ -220,7 +221,14 @@ def make_cache_key(func: Callable, args: Tuple[Any, ...], kwargs: Dict[str, Any]
         if param_name == "bypass_cache":
             continue
         # Exclude common database session and request param names
-        if param_name.lower() in ("db", "session", "db_session", "request", "response", "background_tasks"):
+        if param_name.lower() in (
+            "db",
+            "session",
+            "db_session",
+            "request",
+            "response",
+            "background_tasks",
+        ):
             continue
         # Exclude transient database sessions and HTTP objects
         if _is_unhashable_or_transient(value):

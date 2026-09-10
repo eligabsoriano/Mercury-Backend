@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Dict, List, Optional
+
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -115,9 +116,7 @@ class SellerService:
                 ),
                 late_delivery_rate=float(r["late_delivery_rate"] or 0.0),
                 avg_review_score=(
-                    float(r["avg_review_score"])
-                    if r["avg_review_score"] is not None
-                    else None
+                    float(r["avg_review_score"]) if r["avg_review_score"] is not None else None
                 ),
             )
             for r in rows
@@ -125,7 +124,9 @@ class SellerService:
 
         return SellerListResponse(
             items=items,
-            pagination=PaginationMeta.create(page=page, page_size=page_size, total_items=total_items),
+            pagination=PaginationMeta.create(
+                page=page, page_size=page_size, total_items=total_items
+            ),
         )
 
     @staticmethod
@@ -199,9 +200,7 @@ class SellerService:
             ),
             late_delivery_rate=float(row["late_delivery_rate"] or 0.0),
             avg_review_score=(
-                float(row["avg_review_score"])
-                if row["avg_review_score"] is not None
-                else None
+                float(row["avg_review_score"]) if row["avg_review_score"] is not None else None
             ),
             top_categories=top_categories,
             recent_orders_count=int(row["total_orders_fulfilled"] or 0),

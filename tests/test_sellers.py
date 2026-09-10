@@ -60,7 +60,9 @@ def test_list_sellers_state_filter(client: TestClient) -> None:
 
 def test_list_sellers_sorting(client: TestClient) -> None:
     """GET /api/sellers with sort_by=total_orders_fulfilled desc should be sorted."""
-    response = client.get("/api/sellers?sort_by=total_orders_fulfilled&sort_order=desc&page_size=10")
+    response = client.get(
+        "/api/sellers?sort_by=total_orders_fulfilled&sort_order=desc&page_size=10"
+    )
     assert response.status_code == 200
     data = response.json()
 

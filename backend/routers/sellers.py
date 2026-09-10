@@ -8,6 +8,7 @@ and seller directory searches with pagination and state filtering.
 from __future__ import annotations
 
 from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -30,14 +31,18 @@ router = APIRouter(prefix="/api/sellers", tags=["Sellers"])
 def list_sellers(
     page: int = Query(1, ge=1, description="Page number (1-indexed)"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page (max 100)"),
-    state: Optional[str] = Query(None, description="Filter by two-letter Brazilian state (e.g. SP, RJ)"),
+    state: Optional[str] = Query(
+        None, description="Filter by two-letter Brazilian state (e.g. SP, RJ)"
+    ),
     sort_by: str = Query(
         "total_revenue",
         description="Sort field: total_revenue, total_orders_fulfilled, total_items_sold, avg_review_score, late_delivery_rate",
     ),
     sort_order: str = Query("desc", description="Sort order: asc or desc"),
     search: Optional[str] = Query(None, description="Search by seller_id or city"),
-    bypass_cache: bool = Query(False, description="Bypass in-memory cache and force live database query"),
+    bypass_cache: bool = Query(
+        False, description="Bypass in-memory cache and force live database query"
+    ),
     db: Session = Depends(get_db),
 ) -> SellerListResponse:
     return SellerService.get_sellers(
@@ -63,7 +68,9 @@ def list_sellers(
 )
 def get_seller_detail(
     seller_id: str,
-    bypass_cache: bool = Query(False, description="Bypass in-memory cache and force live database query"),
+    bypass_cache: bool = Query(
+        False, description="Bypass in-memory cache and force live database query"
+    ),
     db: Session = Depends(get_db),
 ) -> SellerDetail:
     seller = SellerService.get_seller_detail(db, seller_id=seller_id, bypass_cache=bypass_cache)

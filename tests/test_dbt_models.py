@@ -50,13 +50,17 @@ def test_staging_views_exist(db_conn):
             """
         )
         found = {row[0] for row in cur.fetchall()}
-        assert EXPECTED_STAGING_VIEWS.issubset(found), f"Missing staging views: {EXPECTED_STAGING_VIEWS - found}"
+        assert EXPECTED_STAGING_VIEWS.issubset(found), (
+            f"Missing staging views: {EXPECTED_STAGING_VIEWS - found}"
+        )
 
 
 def test_stg_customers_has_unique_id(db_conn):
     """Verify stg_customers surfaces customer_unique_id alongside customer_id."""
     with db_conn.cursor() as cur:
-        cur.execute("SELECT customer_id, customer_unique_id, city, state FROM staging.stg_customers LIMIT 5;")
+        cur.execute(
+            "SELECT customer_id, customer_unique_id, city, state FROM staging.stg_customers LIMIT 5;"
+        )
         rows = cur.fetchall()
         assert len(rows) == 5
         for row in rows:
@@ -206,4 +210,3 @@ def test_dim_customers_integrity(db_conn):
         cur.execute("SELECT COUNT(*) FROM mart.dim_customers WHERE city IS NULL OR state IS NULL;")
         missing_loc = cur.fetchone()[0]
         assert missing_loc == 0
-

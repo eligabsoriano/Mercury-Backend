@@ -8,10 +8,11 @@ match the architecture specifications in Neon.
 from __future__ import annotations
 
 import os
+from pathlib import Path
+
 import psycopg2
 import pytest
 from dotenv import load_dotenv
-from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -117,4 +118,6 @@ def test_order_reviews_compound_primary_key(db_conn):
             """
         )
         pk_cols = [row[0] for row in cur.fetchall()]
-        assert pk_cols == ["review_id", "order_id"], f"Expected PK ['review_id', 'order_id'], got {pk_cols}"
+        assert pk_cols == ["review_id", "order_id"], (
+            f"Expected PK ['review_id', 'order_id'], got {pk_cols}"
+        )

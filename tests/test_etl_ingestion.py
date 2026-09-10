@@ -72,7 +72,9 @@ def test_csv_column_alignment():
     """Verify CSV header columns match expected table column count."""
     all_specs = CORE_TABLES + MARKETING_TABLES
     for spec in all_specs:
-        candidate_dirs = DEFAULT_MARKETING_DIRS if "marketing" in spec["table"] else DEFAULT_OLIST_DIRS
+        candidate_dirs = (
+            DEFAULT_MARKETING_DIRS if "marketing" in spec["table"] else DEFAULT_OLIST_DIRS
+        )
         csv_file = find_csv_file(spec["file"], candidate_dirs)
         assert csv_file is not None
         df = pd.read_csv(csv_file, nrows=1, encoding=spec["encoding"])

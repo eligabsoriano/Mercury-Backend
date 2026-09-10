@@ -7,7 +7,8 @@ Common reusable Pydantic schemas for pagination, health checks, and metadata.
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Dict, Generic, List, TypeVar
+
 from pydantic import BaseModel, ConfigDict, Field
 
 T = TypeVar("T")

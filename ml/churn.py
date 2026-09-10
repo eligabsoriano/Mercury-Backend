@@ -206,6 +206,7 @@ WHERE m.recency_days IS NOT NULL
 # Data Preparation & Feature Engineering
 # ---------------------------------------------------------------------------
 
+
 def load_dataset(database_url: str) -> pd.DataFrame:
     """Load customer metrics and RFM segments joined on customer_unique_id."""
     engine = create_engine(database_url)
@@ -238,9 +239,7 @@ def engineer_features(df: pd.DataFrame, window_days: int = 90) -> pd.DataFrame:
     df["has_negative_review"] = df["has_negative_review"].astype(int)
 
     # Derived interaction features
-    df["freight_ratio"] = (
-        df["lifetime_freight_spend"] / (df["lifetime_spend"] + 1e-5)
-    ).round(4)
+    df["freight_ratio"] = (df["lifetime_freight_spend"] / (df["lifetime_spend"] + 1e-5)).round(4)
 
     # Ensure segment is string and filled
     df["segment"] = df["segment"].fillna("Others").astype(str)
@@ -256,15 +255,19 @@ def create_preprocessor(
     num_cols = numeric_features if numeric_features is not None else NUMERIC_FEATURES
     cat_cols = categorical_features if categorical_features is not None else CATEGORICAL_FEATURES
 
-    numeric_transformer = Pipeline([
-        ("imputer", SimpleImputer(strategy="median")),
-        ("scaler", StandardScaler()),
-    ])
+    numeric_transformer = Pipeline(
+        [
+            ("imputer", SimpleImputer(strategy="median")),
+            ("scaler", StandardScaler()),
+        ]
+    )
 
-    categorical_transformer = Pipeline([
-        ("imputer", SimpleImputer(strategy="constant", fill_value="Others")),
-        ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
-    ])
+    categorical_transformer = Pipeline(
+        [
+            ("imputer", SimpleImputer(strategy="constant", fill_value="Others")),
+            ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
+        ]
+    )
 
     preprocessor = ColumnTransformer(
         transformers=[
@@ -278,6 +281,7 @@ def create_preprocessor(
 # ---------------------------------------------------------------------------
 # Business Logic Helpers (Risk Tier & Retention Priority)
 # ---------------------------------------------------------------------------
+
 
 def assign_risk_tier(prob: float) -> str:
     """
@@ -325,6 +329,7 @@ def compute_revenue_at_risk(churn_prob: float, monetary_value: float) -> float:
 # ---------------------------------------------------------------------------
 # Model Training & Evaluation
 # ---------------------------------------------------------------------------
+
 
 def evaluate_classifier(
     name: str,
@@ -407,10 +412,12 @@ def train_candidate_models(
 
     for name, clf in candidates:
         log.info("  Training candidate: %s ...", name)
-        pipe = Pipeline([
-            ("preprocessor", preprocessor),
-            ("classifier", clf),
-        ])
+        pipe = Pipeline(
+            [
+                ("preprocessor", preprocessor),
+                ("classifier", clf),
+            ]
+        )
         metrics = evaluate_classifier(name, pipe, X_train, y_train, X_test, y_test)
         results.append(metrics)
         log.info(
@@ -431,6 +438,7 @@ def train_candidate_models(
 # ---------------------------------------------------------------------------
 # Database Persistence Helpers
 # ---------------------------------------------------------------------------
+
 
 def _get_connection(url: str):
     conn = psycopg2.connect(url)
@@ -486,6 +494,7 @@ def _upsert_predictions(conn, df: pd.DataFrame) -> int:
 # Artifact Serialization
 # ---------------------------------------------------------------------------
 
+
 def save_model_artifact(
     artifact_data: Dict[str, Any],
     output_path: Path = DEFAULT_ARTIFACT_PATH,
@@ -508,6 +517,7 @@ def load_model_artifact(
 # ---------------------------------------------------------------------------
 # Full Pipeline Execution
 # ---------------------------------------------------------------------------
+
 
 def run_churn_pipeline(
     database_url: str,
@@ -559,7 +569,9 @@ def run_churn_pipeline(
     active_pipe = best_pipe
     active_name = best_name
     if model_choice != "best":
-        matched = [r for r in eval_results if model_choice.lower() in r["name"].lower().replace(" ", "_")]
+        matched = [
+            r for r in eval_results if model_choice.lower() in r["name"].lower().replace(" ", "_")
+        ]
         if matched:
             active_pipe = matched[0]["pipeline"]
             active_name = matched[0]["name"]
@@ -587,12 +599,10 @@ def run_churn_pipeline(
     df["risk_tier"] = [assign_risk_tier(p) for p in df["churn_probability"]]
     df["monetary_value"] = df["lifetime_spend"].round(2)
     df["revenue_at_risk"] = [
-        compute_revenue_at_risk(p, m)
-        for p, m in zip(df["churn_probability"], df["monetary_value"])
+        compute_revenue_at_risk(p, m) for p, m in zip(df["churn_probability"], df["monetary_value"])
     ]
     df["retention_priority"] = [
-        assign_retention_priority(p, m)
-        for p, m in zip(df["churn_probability"], df["m_score"])
+        assign_retention_priority(p, m) for p, m in zip(df["churn_probability"], df["m_score"])
     ]
 
     # Database write
@@ -618,7 +628,9 @@ def run_churn_pipeline(
         "winning_model": active_name,
         "total_revenue_at_risk": total_rev_at_risk,
         "total_historical_spend": total_historical_rev,
-        "revenue_at_risk_pct": (total_rev_at_risk / total_historical_rev * 100) if total_historical_rev else 0.0,
+        "revenue_at_risk_pct": (total_rev_at_risk / total_historical_rev * 100)
+        if total_historical_rev
+        else 0.0,
     }
 
     return df, eval_results, summary
@@ -627,6 +639,7 @@ def run_churn_pipeline(
 # ---------------------------------------------------------------------------
 # Reporting
 # ---------------------------------------------------------------------------
+
 
 def print_summary(
     df: pd.DataFrame,
@@ -641,7 +654,9 @@ def print_summary(
     # Model evaluation comparison table
     print("\n1. Candidate Model Performance (Test Cohort)")
     print("-" * 78)
-    print(f"{'Model':<24} | {'ROC-AUC':<8} | {'PR-AUC':<8} | {'F1':<6} | {'Prec':<6} | {'Rec':<6} | {'P@10%':<6}")
+    print(
+        f"{'Model':<24} | {'ROC-AUC':<8} | {'PR-AUC':<8} | {'F1':<6} | {'Prec':<6} | {'Rec':<6} | {'P@10%':<6}"
+    )
     print("-" * 78)
     for r in eval_results:
         print(
@@ -665,7 +680,9 @@ def print_summary(
         .reindex([RISK_TIER_HIGH, RISK_TIER_MEDIUM, RISK_TIER_LOW])
     )
     tier_stats["pct_customers"] = (tier_stats["customers"] / len(df) * 100).round(1)
-    tier_stats["pct_rev_risk"] = (tier_stats["total_rev_risk"] / summary["total_revenue_at_risk"] * 100).round(1)
+    tier_stats["pct_rev_risk"] = (
+        tier_stats["total_rev_risk"] / summary["total_revenue_at_risk"] * 100
+    ).round(1)
 
     print(
         f"{'Risk Tier':<10} | {'Customers':<10} | {'% Base':<8} | {'Avg P(Churn)':<14} | "
@@ -693,7 +710,9 @@ def print_summary(
     )
     prio_stats["pct_customers"] = (prio_stats["customers"] / len(df) * 100).round(1)
 
-    print(f"{'Retention Action':<36} | {'Customers':<10} | {'Avg P(Churn)':<14} | {'Revenue at Risk (R$)'}")
+    print(
+        f"{'Retention Action':<36} | {'Customers':<10} | {'Avg P(Churn)':<14} | {'Revenue at Risk (R$)'}"
+    )
     print("-" * 78)
     for prio, row in prio_stats.iterrows():
         print(
@@ -708,13 +727,16 @@ def print_summary(
     print(f"  Observation Window            : {summary['churn_window_days']} days")
     print(f"  Observed Churn Rate           : {summary['observed_churn_rate']:.2%}")
     print(f"  Total Historical Revenue      : R$ {summary['total_historical_spend']:,.2f}")
-    print(f"  Total Expected Revenue at Risk: R$ {summary['total_revenue_at_risk']:,.2f} ({summary['revenue_at_risk_pct']:.1f}%)")
+    print(
+        f"  Total Expected Revenue at Risk: R$ {summary['total_revenue_at_risk']:,.2f} ({summary['revenue_at_risk_pct']:.1f}%)"
+    )
     print("=" * 78 + "\n")
 
 
 # ---------------------------------------------------------------------------
 # CLI Entry Point
 # ---------------------------------------------------------------------------
+
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(

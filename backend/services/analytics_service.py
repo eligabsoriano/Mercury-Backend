@@ -8,10 +8,12 @@ RFM segment breakdown, and revenue-at-risk exposure.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from backend.cache import cached, clear_cache, get_cache_stats
 from backend.schemas.analytics import (
     CohortRetentionPoint,
     PortfolioOverview,
@@ -27,7 +29,6 @@ from backend.schemas.churn import (
 )
 from backend.schemas.customer import CustomerSummary
 from backend.schemas.rfm import SegmentDistribution
-from backend.cache import cached, clear_cache, get_cache_stats
 
 log = logging.getLogger(__name__)
 
@@ -78,14 +79,10 @@ class AnalyticsService:
         high_risk_count = int(churn_row["high_risk_customers_count"])
 
         risk_percentage = (
-            round((portfolio_rar / total_revenue) * 100.0, 2)
-            if total_revenue > 0
-            else 0.0
+            round((portfolio_rar / total_revenue) * 100.0, 2) if total_revenue > 0 else 0.0
         )
         high_risk_pct = (
-            round((high_risk_count / total_customers) * 100.0, 2)
-            if total_customers > 0
-            else 0.0
+            round((high_risk_count / total_customers) * 100.0, 2) if total_customers > 0 else 0.0
         )
 
         return PortfolioOverview(
@@ -277,16 +274,24 @@ class AnalyticsService:
                     zip_prefix=row["zip_prefix"],
                     first_purchased_at=row["first_purchased_at"],
                     latest_purchased_at=row["latest_purchased_at"],
-                    recency_days=float(row["recency_days"]) if row["recency_days"] is not None else None,
-                    customer_lifespan_days=float(row["customer_lifespan_days"]) if row["customer_lifespan_days"] is not None else None,
+                    recency_days=float(row["recency_days"])
+                    if row["recency_days"] is not None
+                    else None,
+                    customer_lifespan_days=float(row["customer_lifespan_days"])
+                    if row["customer_lifespan_days"] is not None
+                    else None,
                     lifetime_orders=int(row["lifetime_orders"]),
                     is_repeat_buyer=int(row["is_repeat_buyer"]),
                     lifetime_spend=round(float(row["lifetime_spend"]), 2),
                     avg_order_value=round(float(row["avg_order_value"]), 2),
                     segment=row["segment"],
-                    churn_probability=float(row["churn_probability"]) if row["churn_probability"] is not None else None,
+                    churn_probability=float(row["churn_probability"])
+                    if row["churn_probability"] is not None
+                    else None,
                     risk_tier=row["risk_tier"],
-                    revenue_at_risk=float(row["revenue_at_risk"]) if row["revenue_at_risk"] is not None else None,
+                    revenue_at_risk=float(row["revenue_at_risk"])
+                    if row["revenue_at_risk"] is not None
+                    else None,
                     retention_priority=row["retention_priority"],
                 )
                 for row in top_rows
@@ -464,4 +469,3 @@ class AnalyticsService:
     def clear_cache() -> int:
         """Purge all active items in the in-memory cache."""
         return clear_cache()
-

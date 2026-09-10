@@ -42,7 +42,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     log.info("Starting %s v%s (%s)", settings.app_name, settings.app_version, settings.env)
     db_check = check_db_connection()
     if db_check["connected"]:
-        log.info("PostgreSQL database connection verified (latency: %.2f ms)", db_check["latency_ms"])
+        log.info(
+            "PostgreSQL database connection verified (latency: %.2f ms)", db_check["latency_ms"]
+        )
     else:
         log.warning("Database connection warning: %s", db_check["error"])
     yield

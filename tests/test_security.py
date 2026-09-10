@@ -12,7 +12,6 @@ Unit and functional test suite for Phase 3:
 from __future__ import annotations
 
 import re
-import time
 from datetime import timedelta
 from typing import Generator
 from unittest.mock import patch
@@ -76,7 +75,9 @@ def test_process_time_header_attached() -> None:
 
 def test_rate_limiter_sliding_window_permits_below_threshold() -> None:
     """Tests the core rate limiter sliding window allows requests below limit."""
-    allowed, remaining, retry_after = rate_limiter.is_allowed("192.168.1.10", limit=5, window_seconds=60)
+    allowed, remaining, retry_after = rate_limiter.is_allowed(
+        "192.168.1.10", limit=5, window_seconds=60
+    )
     assert allowed is True
     assert remaining == 4
     assert retry_after == 0

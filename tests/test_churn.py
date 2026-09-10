@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Dict, Any
 
 import numpy as np
 import pandas as pd
@@ -52,10 +51,10 @@ from ml.churn import (
     train_candidate_models,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="module")
 def db_conn():
@@ -74,46 +73,57 @@ def synthetic_customer_df() -> pd.DataFrame:
     """Generate a clean synthetic DataFrame with all required mart + RFM columns."""
     np.random.seed(42)
     n = 200
-    return pd.DataFrame({
-        "customer_unique_id": [f"cust_{i:04d}" for i in range(n)],
-        "first_purchased_at": pd.date_range("2017-01-01", periods=n, freq="D", tz="UTC"),
-        "latest_purchased_at": pd.date_range("2017-06-01", periods=n, freq="D", tz="UTC"),
-        "recency_days": np.random.randint(10, 300, size=n),
-        "customer_lifespan_days": np.random.randint(0, 100, size=n),
-        "lifetime_orders": np.random.choice([1, 2, 3], size=n, p=[0.90, 0.08, 0.02]),
-        "is_repeat_buyer": np.random.choice([False, True], size=n, p=[0.90, 0.10]),
-        "lifetime_spend": np.random.uniform(20.0, 1500.0, size=n).round(2),
-        "lifetime_product_spend": np.random.uniform(15.0, 1200.0, size=n).round(2),
-        "lifetime_freight_spend": np.random.uniform(5.0, 100.0, size=n).round(2),
-        "avg_order_value": np.random.uniform(20.0, 800.0, size=n).round(2),
-        "lifetime_items": np.random.randint(1, 5, size=n),
-        "avg_items_per_order": np.random.uniform(1.0, 3.0, size=n).round(2),
-        "total_unique_products_purchased": np.random.randint(1, 4, size=n),
-        "total_unique_sellers_contacted": np.random.randint(1, 3, size=n),
-        "avg_delivery_delay_days": np.random.uniform(-15.0, 10.0, size=n).round(2),
-        "max_delivery_delay_days": np.random.uniform(-10.0, 15.0, size=n).round(2),
-        "late_orders_count": np.random.choice([0, 1], size=n, p=[0.92, 0.08]),
-        "on_time_orders_count": np.random.choice([1, 2], size=n, p=[0.92, 0.08]),
-        "late_order_ratio": np.random.uniform(0.0, 0.5, size=n).round(2),
-        "has_late_delivery": np.random.choice([False, True], size=n, p=[0.92, 0.08]),
-        "total_reviews_submitted": np.random.randint(0, 3, size=n),
-        "avg_review_score": np.random.choice([1.0, 2.0, 3.0, 4.0, 5.0, np.nan], size=n),
-        "negative_reviews_count": np.random.choice([0, 1], size=n, p=[0.85, 0.15]),
-        "positive_reviews_count": np.random.choice([0, 1, 2], size=n, p=[0.2, 0.7, 0.1]),
-        "has_negative_review": np.random.choice([False, True], size=n, p=[0.85, 0.15]),
-        "negative_review_ratio": np.random.uniform(0.0, 0.3, size=n).round(2),
-        "f_score": np.random.choice([1, 3, 4, 5], size=n, p=[0.90, 0.07, 0.02, 0.01]),
-        "m_score": np.random.choice([1, 2, 3, 4, 5], size=n),
-        "segment": np.random.choice(
-            ["Champions", "Loyal Customers", "Potential Loyalists", "New Customers", "At Risk", "Lost / Inactive", "Others"],
-            size=n,
-        ),
-    })
+    return pd.DataFrame(
+        {
+            "customer_unique_id": [f"cust_{i:04d}" for i in range(n)],
+            "first_purchased_at": pd.date_range("2017-01-01", periods=n, freq="D", tz="UTC"),
+            "latest_purchased_at": pd.date_range("2017-06-01", periods=n, freq="D", tz="UTC"),
+            "recency_days": np.random.randint(10, 300, size=n),
+            "customer_lifespan_days": np.random.randint(0, 100, size=n),
+            "lifetime_orders": np.random.choice([1, 2, 3], size=n, p=[0.90, 0.08, 0.02]),
+            "is_repeat_buyer": np.random.choice([False, True], size=n, p=[0.90, 0.10]),
+            "lifetime_spend": np.random.uniform(20.0, 1500.0, size=n).round(2),
+            "lifetime_product_spend": np.random.uniform(15.0, 1200.0, size=n).round(2),
+            "lifetime_freight_spend": np.random.uniform(5.0, 100.0, size=n).round(2),
+            "avg_order_value": np.random.uniform(20.0, 800.0, size=n).round(2),
+            "lifetime_items": np.random.randint(1, 5, size=n),
+            "avg_items_per_order": np.random.uniform(1.0, 3.0, size=n).round(2),
+            "total_unique_products_purchased": np.random.randint(1, 4, size=n),
+            "total_unique_sellers_contacted": np.random.randint(1, 3, size=n),
+            "avg_delivery_delay_days": np.random.uniform(-15.0, 10.0, size=n).round(2),
+            "max_delivery_delay_days": np.random.uniform(-10.0, 15.0, size=n).round(2),
+            "late_orders_count": np.random.choice([0, 1], size=n, p=[0.92, 0.08]),
+            "on_time_orders_count": np.random.choice([1, 2], size=n, p=[0.92, 0.08]),
+            "late_order_ratio": np.random.uniform(0.0, 0.5, size=n).round(2),
+            "has_late_delivery": np.random.choice([False, True], size=n, p=[0.92, 0.08]),
+            "total_reviews_submitted": np.random.randint(0, 3, size=n),
+            "avg_review_score": np.random.choice([1.0, 2.0, 3.0, 4.0, 5.0, np.nan], size=n),
+            "negative_reviews_count": np.random.choice([0, 1], size=n, p=[0.85, 0.15]),
+            "positive_reviews_count": np.random.choice([0, 1, 2], size=n, p=[0.2, 0.7, 0.1]),
+            "has_negative_review": np.random.choice([False, True], size=n, p=[0.85, 0.15]),
+            "negative_review_ratio": np.random.uniform(0.0, 0.3, size=n).round(2),
+            "f_score": np.random.choice([1, 3, 4, 5], size=n, p=[0.90, 0.07, 0.02, 0.01]),
+            "m_score": np.random.choice([1, 2, 3, 4, 5], size=n),
+            "segment": np.random.choice(
+                [
+                    "Champions",
+                    "Loyal Customers",
+                    "Potential Loyalists",
+                    "New Customers",
+                    "At Risk",
+                    "Lost / Inactive",
+                    "Others",
+                ],
+                size=n,
+            ),
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
 # Unit Tests — Pure Python
 # ---------------------------------------------------------------------------
+
 
 class TestRiskTierAssignment:
     def test_high_risk_tier(self):
@@ -240,9 +250,7 @@ class TestPreprocessorAndCandidateModels:
             y[1] = 1
 
         preprocessor = create_preprocessor(NUMERIC_FEATURES, CATEGORICAL_FEATURES)
-        best_name, best_pipeline, results = train_candidate_models(
-            X, y, X, y, preprocessor
-        )
+        best_name, best_pipeline, results = train_candidate_models(X, y, X, y, preprocessor)
 
         artifact_file = tmp_path / "test_churn_model.joblib"
         artifact_data = {
@@ -267,6 +275,7 @@ class TestPreprocessorAndCandidateModels:
 # ---------------------------------------------------------------------------
 # Integration Tests — Requires Live Neon PostgreSQL
 # ---------------------------------------------------------------------------
+
 
 class TestChurnPipelineIntegration:
     """Integration test suite executing against PostgreSQL mart tables."""
@@ -343,7 +352,9 @@ class TestChurnPipelineIntegration:
 
             cur.execute("SELECT COUNT(*) FROM ml.churn_predictions;")
             db_count = cur.fetchone()[0]
-            assert db_count == 93358, f"Expected 93,358 rows in ml.churn_predictions, got {db_count}"
+            assert db_count == 93358, (
+                f"Expected 93,358 rows in ml.churn_predictions, got {db_count}"
+            )
 
     def test_database_has_no_nulls_in_critical_columns(self, pipeline_run, db_conn):
         with db_conn.cursor() as cur:

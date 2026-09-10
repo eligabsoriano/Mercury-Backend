@@ -8,6 +8,7 @@ and category market share breakdowns.
 from __future__ import annotations
 
 from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -34,14 +35,18 @@ router = APIRouter(prefix="/api/products", tags=["Products"])
 def list_products(
     page: int = Query(1, ge=1, description="Page number (1-indexed)"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page (max 100)"),
-    category: Optional[str] = Query(None, description="Filter by category name (English or Portuguese)"),
+    category: Optional[str] = Query(
+        None, description="Filter by category name (English or Portuguese)"
+    ),
     sort_by: str = Query(
         "total_revenue",
         description="Sort field: total_revenue, total_units_sold, total_orders_count, avg_unit_price, avg_review_score",
     ),
     sort_order: str = Query("desc", description="Sort order: asc or desc"),
     search: Optional[str] = Query(None, description="Search by product_id or category"),
-    bypass_cache: bool = Query(False, description="Bypass in-memory cache and force live database query"),
+    bypass_cache: bool = Query(
+        False, description="Bypass in-memory cache and force live database query"
+    ),
     db: Session = Depends(get_db),
 ) -> ProductListResponse:
     return ProductService.get_products(
@@ -66,7 +71,9 @@ def list_products(
     ),
 )
 def get_categories_overview(
-    bypass_cache: bool = Query(False, description="Bypass in-memory cache and force live database query"),
+    bypass_cache: bool = Query(
+        False, description="Bypass in-memory cache and force live database query"
+    ),
     db: Session = Depends(get_db),
 ) -> CategoryListResponse:
     return ProductService.get_categories(db=db, bypass_cache=bypass_cache)
@@ -83,10 +90,14 @@ def get_categories_overview(
 )
 def get_product_detail(
     product_id: str,
-    bypass_cache: bool = Query(False, description="Bypass in-memory cache and force live database query"),
+    bypass_cache: bool = Query(
+        False, description="Bypass in-memory cache and force live database query"
+    ),
     db: Session = Depends(get_db),
 ) -> ProductSummary:
-    product = ProductService.get_product_detail(db, product_id=product_id, bypass_cache=bypass_cache)
+    product = ProductService.get_product_detail(
+        db, product_id=product_id, bypass_cache=bypass_cache
+    )
     if not product:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

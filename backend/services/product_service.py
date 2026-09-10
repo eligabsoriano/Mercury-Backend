@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Dict, List, Optional
+
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -120,19 +121,33 @@ class ProductService:
                 total_orders_count=int(r["total_orders_count"] or 0),
                 total_revenue=float(r["total_revenue"] or 0.0),
                 avg_unit_price=float(r["avg_unit_price"] or 0.0),
-                avg_review_score=float(r["avg_review_score"]) if r["avg_review_score"] is not None else None,
-                product_weight_g=float(r["product_weight_g"]) if r["product_weight_g"] is not None else None,
-                product_length_cm=float(r["product_length_cm"]) if r["product_length_cm"] is not None else None,
-                product_height_cm=float(r["product_height_cm"]) if r["product_height_cm"] is not None else None,
-                product_width_cm=float(r["product_width_cm"]) if r["product_width_cm"] is not None else None,
-                product_photos_qty=int(r["product_photos_qty"]) if r["product_photos_qty"] is not None else None,
+                avg_review_score=float(r["avg_review_score"])
+                if r["avg_review_score"] is not None
+                else None,
+                product_weight_g=float(r["product_weight_g"])
+                if r["product_weight_g"] is not None
+                else None,
+                product_length_cm=float(r["product_length_cm"])
+                if r["product_length_cm"] is not None
+                else None,
+                product_height_cm=float(r["product_height_cm"])
+                if r["product_height_cm"] is not None
+                else None,
+                product_width_cm=float(r["product_width_cm"])
+                if r["product_width_cm"] is not None
+                else None,
+                product_photos_qty=int(r["product_photos_qty"])
+                if r["product_photos_qty"] is not None
+                else None,
             )
             for r in rows
         ]
 
         return ProductListResponse(
             items=items,
-            pagination=PaginationMeta.create(page=page, page_size=page_size, total_items=total_items),
+            pagination=PaginationMeta.create(
+                page=page, page_size=page_size, total_items=total_items
+            ),
         )
 
     @staticmethod
@@ -171,7 +186,9 @@ class ProductService:
                 total_units_sold=int(r["total_units_sold"]),
                 total_revenue=float(r["total_revenue"]),
                 avg_price=float(r["avg_price"]),
-                avg_review_score=float(r["avg_review_score"]) if r["avg_review_score"] is not None else None,
+                avg_review_score=float(r["avg_review_score"])
+                if r["avg_review_score"] is not None
+                else None,
             )
             for r in rows
         ]
@@ -234,10 +251,22 @@ class ProductService:
             total_orders_count=int(row["total_orders_count"] or 0),
             total_revenue=float(row["total_revenue"] or 0.0),
             avg_unit_price=float(row["avg_unit_price"] or 0.0),
-            avg_review_score=float(row["avg_review_score"]) if row["avg_review_score"] is not None else None,
-            product_weight_g=float(row["product_weight_g"]) if row["product_weight_g"] is not None else None,
-            product_length_cm=float(row["product_length_cm"]) if row["product_length_cm"] is not None else None,
-            product_height_cm=float(row["product_height_cm"]) if row["product_height_cm"] is not None else None,
-            product_width_cm=float(row["product_width_cm"]) if row["product_width_cm"] is not None else None,
-            product_photos_qty=int(row["product_photos_qty"]) if row["product_photos_qty"] is not None else None,
+            avg_review_score=float(row["avg_review_score"])
+            if row["avg_review_score"] is not None
+            else None,
+            product_weight_g=float(row["product_weight_g"])
+            if row["product_weight_g"] is not None
+            else None,
+            product_length_cm=float(row["product_length_cm"])
+            if row["product_length_cm"] is not None
+            else None,
+            product_height_cm=float(row["product_height_cm"])
+            if row["product_height_cm"] is not None
+            else None,
+            product_width_cm=float(row["product_width_cm"])
+            if row["product_width_cm"] is not None
+            else None,
+            product_photos_qty=int(row["product_photos_qty"])
+            if row["product_photos_qty"] is not None
+            else None,
         )

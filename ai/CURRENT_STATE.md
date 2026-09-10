@@ -172,8 +172,20 @@ Snapshot date: 2026-09-06.
 - Validated with **5 out of 5 tests passing** in `tests/test_deployment.py`.
 - Full project test suite: **143 out of 143 tests passing** across 11 test suites.
 
+### 15. Automated CI/CD Pipeline (Phase 5 — ✅ Complete)
+- Application Architecture:
+  - `.github/workflows/ci.yml`: Automated GitHub Actions pipeline triggered on push to `main` and all Pull Requests targeting `main`.
+  - Quality Gates:
+    1. Python 3.13 setup with pip dependency caching.
+    2. Linting: `ruff check backend/ ml/ tests/`.
+    3. Formatting: `ruff format --check backend/ ml/ tests/`.
+    4. Test execution: `pytest tests/ -v`.
+  - `pyproject.toml`: Modern project tooling configuration defining ruff lint rules, format settings, line lengths, and test path resolution.
+  - `requirements.txt`: Pinned `ruff==0.16.6` and `pyyaml==6.0.2`.
+- Validated with **3 out of 3 tests passing** in `tests/test_ci.py`.
+- Full project test suite: **146 out of 146 tests passing** across 12 test suites.
+
 ---
 
 ## Next Steps
-- Implement Phase 5: Automated CI/CD Pipeline (`.github/workflows/ci.yml`).
-- Implement Phase 6: Client Integration & Schema Contracts.
+- Implement Phase 6: Client Integration & Schema Contracts (`scripts/export_openapi.py`, `docs/powerbi_setup.md`).

@@ -36,10 +36,10 @@ from ml.rfm import (
     score_frequency,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="module")
 def db_conn():
@@ -64,6 +64,7 @@ def rfm_df(db_conn):
 # ---------------------------------------------------------------------------
 # Unit tests — scoring helpers
 # ---------------------------------------------------------------------------
+
 
 class TestQuintileScore:
     def test_ascending_returns_5_unique_labels(self):
@@ -140,11 +141,20 @@ class TestAssignSegment:
 # Integration tests — requires live DATABASE_URL
 # ---------------------------------------------------------------------------
 
+
 class TestRfmPipeline:
     def test_dataframe_has_expected_columns(self, rfm_df):
         required = {
-            "customer_unique_id", "recency_days", "frequency", "monetary",
-            "r_score", "f_score", "m_score", "rfm_score", "rfm_label", "segment",
+            "customer_unique_id",
+            "recency_days",
+            "frequency",
+            "monetary",
+            "r_score",
+            "f_score",
+            "m_score",
+            "rfm_score",
+            "rfm_label",
+            "segment",
         }
         assert required.issubset(set(rfm_df.columns))
 
@@ -152,9 +162,7 @@ class TestRfmPipeline:
         with db_conn.cursor() as cur:
             cur.execute("SELECT COUNT(*) FROM mart.mart_customer_metrics;")
             mart_count = cur.fetchone()[0]
-        assert len(rfm_df) == mart_count, (
-            f"RFM scored {len(rfm_df)} rows but mart has {mart_count}"
-        )
+        assert len(rfm_df) == mart_count, f"RFM scored {len(rfm_df)} rows but mart has {mart_count}"
 
     def test_scores_in_valid_range(self, rfm_df):
         for col in ["r_score", "f_score", "m_score"]:
@@ -173,8 +181,13 @@ class TestRfmPipeline:
 
     def test_known_segments_present(self, rfm_df):
         valid_segments = {
-            SEG_CHAMPIONS, SEG_LOYAL, SEG_POTENTIAL,
-            SEG_NEW, SEG_AT_RISK, SEG_LOST, SEG_OTHERS,
+            SEG_CHAMPIONS,
+            SEG_LOYAL,
+            SEG_POTENTIAL,
+            SEG_NEW,
+            SEG_AT_RISK,
+            SEG_LOST,
+            SEG_OTHERS,
         }
         found = set(rfm_df["segment"].unique())
         assert found.issubset(valid_segments), f"Unknown segments: {found - valid_segments}"
@@ -227,8 +240,13 @@ class TestRfmDbWrite:
 
     def test_all_segments_valid_in_db(self, db_conn):
         valid_segments = (
-            SEG_CHAMPIONS, SEG_LOYAL, SEG_POTENTIAL,
-            SEG_NEW, SEG_AT_RISK, SEG_LOST, SEG_OTHERS,
+            SEG_CHAMPIONS,
+            SEG_LOYAL,
+            SEG_POTENTIAL,
+            SEG_NEW,
+            SEG_AT_RISK,
+            SEG_LOST,
+            SEG_OTHERS,
         )
         placeholders = ",".join(["%s"] * len(valid_segments))
         with db_conn.cursor() as cur:

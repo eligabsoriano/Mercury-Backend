@@ -12,6 +12,7 @@ Tests for Phase 4 Containerization & Cloud Deployment artifacts:
 from __future__ import annotations
 
 from pathlib import Path
+
 import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -51,7 +52,9 @@ def test_dockerignore_exclusions() -> None:
     assert dockerignore_path.is_file(), ".dockerignore must exist at repository root"
 
     content = dockerignore_path.read_text(encoding="utf-8")
-    lines = {line.strip() for line in content.splitlines() if line.strip() and not line.startswith("#")}
+    lines = {
+        line.strip() for line in content.splitlines() if line.strip() and not line.startswith("#")
+    }
 
     expected_exclusions = [
         ".git/",

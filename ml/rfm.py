@@ -111,6 +111,7 @@ WHERE recency_days  IS NOT NULL
 # Scoring helpers
 # ---------------------------------------------------------------------------
 
+
 def _quintile_score(series: pd.Series, ascending: bool = True) -> pd.Series:
     """
     Assign quintile ranks 1-5 using pd.qcut with duplicates='drop'.
@@ -180,6 +181,7 @@ def assign_segment(row: pd.Series) -> str:
 # DB helpers
 # ---------------------------------------------------------------------------
 
+
 def _get_connection(url: str):
     conn = psycopg2.connect(url)
     conn.autocommit = False
@@ -240,6 +242,7 @@ def _upsert_segments(conn, df: pd.DataFrame) -> int:
 # Core pipeline
 # ---------------------------------------------------------------------------
 
+
 def run_rfm(database_url: str, dry_run: bool = False) -> pd.DataFrame:
     """
     Full RFM pipeline.
@@ -274,9 +277,7 @@ def run_rfm(database_url: str, dry_run: bool = False) -> pd.DataFrame:
 
         # Human-readable label e.g. "543"
         df["rfm_label"] = (
-            df["r_score"].astype(str)
-            + df["f_score"].astype(str)
-            + df["m_score"].astype(str)
+            df["r_score"].astype(str) + df["f_score"].astype(str) + df["m_score"].astype(str)
         )
 
         # Segment assignment
@@ -300,6 +301,7 @@ def run_rfm(database_url: str, dry_run: bool = False) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # Reporting
 # ---------------------------------------------------------------------------
+
 
 def print_summary(df: pd.DataFrame) -> None:
     """Print a concise segment distribution summary to stdout."""
@@ -333,6 +335,7 @@ def print_summary(df: pd.DataFrame) -> None:
 # ---------------------------------------------------------------------------
 # CLI entry-point
 # ---------------------------------------------------------------------------
+
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(

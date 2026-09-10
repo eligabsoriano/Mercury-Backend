@@ -7,6 +7,7 @@ Pydantic schemas for product catalog intelligence and category analytics.
 from __future__ import annotations
 
 from typing import List, Optional
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.schemas.common import PaginationMeta
@@ -21,15 +22,23 @@ class ProductSummary(BaseModel):
     category_name_pt: Optional[str] = Field(None, description="Original Portuguese category name")
     category_name_en: Optional[str] = Field(None, description="English category name translation")
     total_units_sold: int = Field(0, description="Total units sold across all delivered orders")
-    total_orders_count: int = Field(0, description="Distinct delivered orders containing this product")
-    total_revenue: float = Field(0.0, description="Gross revenue generated (price + freight) in BRL")
+    total_orders_count: int = Field(
+        0, description="Distinct delivered orders containing this product"
+    )
+    total_revenue: float = Field(
+        0.0, description="Gross revenue generated (price + freight) in BRL"
+    )
     avg_unit_price: float = Field(0.0, description="Average retail price in BRL")
-    avg_review_score: Optional[float] = Field(None, description="Average customer review rating (1.0 - 5.0)")
+    avg_review_score: Optional[float] = Field(
+        None, description="Average customer review rating (1.0 - 5.0)"
+    )
     product_weight_g: Optional[float] = Field(None, description="Product weight in grams")
     product_length_cm: Optional[float] = Field(None, description="Product package length in cm")
     product_height_cm: Optional[float] = Field(None, description="Product package height in cm")
     product_width_cm: Optional[float] = Field(None, description="Product package width in cm")
-    product_photos_qty: Optional[int] = Field(None, description="Number of product gallery photos published")
+    product_photos_qty: Optional[int] = Field(
+        None, description="Number of product gallery photos published"
+    )
 
 
 class CategorySummary(BaseModel):

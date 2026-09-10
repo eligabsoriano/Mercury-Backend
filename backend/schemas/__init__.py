@@ -9,6 +9,11 @@ from backend.schemas.analytics import (
     RevenueAtRiskOverview,
     SegmentsOverview,
 )
+from backend.schemas.auth import (
+    TokenRequest,
+    TokenResponse,
+    UserIdentity,
+)
 from backend.schemas.churn import (
     ChurnPrediction,
     RetentionPrioritySummary,
@@ -26,11 +31,6 @@ from backend.schemas.customer import (
     CustomerListResponse,
     CustomerReviewMetrics,
     CustomerSummary,
-)
-from backend.schemas.auth import (
-    TokenRequest,
-    TokenResponse,
-    UserIdentity,
 )
 from backend.schemas.rfm import (
     RFMScorecard,

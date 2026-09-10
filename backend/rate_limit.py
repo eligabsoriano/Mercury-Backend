@@ -79,10 +79,7 @@ class SlidingWindowRateLimiter:
     def _cleanup_stale_records(self, now: float, window: int) -> None:
         """Removes entries that have had no traffic within the window."""
         cutoff = now - window
-        stale_keys = [
-            k for k, q in self._records.items()
-            if not q or q[-1] < cutoff
-        ]
+        stale_keys = [k for k, q in self._records.items() if not q or q[-1] < cutoff]
         for k in stale_keys:
             del self._records[k]
 

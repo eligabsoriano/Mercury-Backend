@@ -104,7 +104,7 @@ def decode_access_token(token: str, secret_key: Optional[str] = None) -> Dict[st
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Malformed token: expected 3-part JWT structure",
-            headers={"WWW-Authenticate": "Bearer error=\"invalid_token\""},
+            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
         )
 
     header_b64, payload_b64, sig_b64 = parts
@@ -118,14 +118,14 @@ def decode_access_token(token: str, secret_key: Optional[str] = None) -> Dict[st
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token signature encoding",
-            headers={"WWW-Authenticate": "Bearer error=\"invalid_token\""},
+            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
         )
 
     if not hmac.compare_digest(expected_sig, provided_sig):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token signature",
-            headers={"WWW-Authenticate": "Bearer error=\"invalid_token\""},
+            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
         )
 
     try:
@@ -135,7 +135,7 @@ def decode_access_token(token: str, secret_key: Optional[str] = None) -> Dict[st
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Corrupt token claims payload",
-            headers={"WWW-Authenticate": "Bearer error=\"invalid_token\""},
+            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
         )
 
     # Expiration check
@@ -144,7 +144,9 @@ def decode_access_token(token: str, secret_key: Optional[str] = None) -> Dict[st
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired",
-            headers={"WWW-Authenticate": "Bearer error=\"invalid_token\", error_description=\"Token expired\""},
+            headers={
+                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Token expired"'
+            },
         )
 
     return claims
@@ -171,13 +173,23 @@ async def verify_auth(
 
     # Public endpoint exemption
     if is_path_exempt(request.url.path):
-        user_ctx = {"authenticated": True, "auth_type": "public", "user": "anonymous", "roles": ["public"]}
+        user_ctx = {
+            "authenticated": True,
+            "auth_type": "public",
+            "user": "anonymous",
+            "roles": ["public"],
+        }
         request.state.user = user_ctx
         return user_ctx
 
     # Development bypass when REQUIRE_AUTH is false
     if not req_settings.require_auth:
-        user_ctx = {"authenticated": True, "auth_type": "dev_bypass", "user": "developer", "roles": ["admin"]}
+        user_ctx = {
+            "authenticated": True,
+            "auth_type": "dev_bypass",
+            "user": "developer",
+            "roles": ["admin"],
+        }
         request.state.user = user_ctx
         return user_ctx
 
@@ -202,7 +214,9 @@ async def verify_auth(
 
     # Bearer JWT token authentication
     if bearer_creds and bearer_creds.credentials:
-        claims = decode_access_token(bearer_creds.credentials, secret_key=req_settings.jwt_secret_key)
+        claims = decode_access_token(
+            bearer_creds.credentials, secret_key=req_settings.jwt_secret_key
+        )
         user_ctx = {
             "authenticated": True,
             "auth_type": "bearer",
