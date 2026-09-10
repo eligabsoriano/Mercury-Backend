@@ -161,8 +161,19 @@ Snapshot date: 2026-09-06.
 - Validated with **18 out of 18 tests passing** in `tests/test_security.py`.
 - Full project test suite: **138 out of 138 tests passing** across 10 test suites.
 
+### 14. Containerization & Cloud Deployment (Phase 4 — ✅ Complete)
+- Application Architecture:
+  - `Dockerfile`: Production multi-stage Dockerfile built on `python:3.13-slim`. Isolates build tools to the builder stage, runs as unprivileged user `mercury` (UID 1000), includes automatic container healthcheck pointing to `/health`.
+  - `.dockerignore`: Comprehensive exclusion list omitting git metadata, local virtualenvs, secret `.env` files, raw datasets, dbt artifacts, and compiler caches.
+  - `docker-compose.yml`: Local multi-container development and staging configuration with `8000:8000` port forwarding, `.env` binding, hot-reload volume mounts, and service health checks.
+  - `Procfile`: Cloud PaaS process descriptor for Heroku, Railway, and Render (`web: uvicorn backend.main:app --host 0.0.0.0 --port $PORT`).
+  - `render.yaml`: Infrastructure-as-code blueprint for automated, zero-downtime deployment on Render with health checks and environment variable schemas.
+  - `docs/deployment.md`: Operational guide detailing Docker commands, compose workflows, and cloud hosting checklists.
+- Validated with **5 out of 5 tests passing** in `tests/test_deployment.py`.
+- Full project test suite: **143 out of 143 tests passing** across 11 test suites.
+
 ---
 
 ## Next Steps
-- Implement Phase 4: Containerization & Cloud Deployment (`Dockerfile`, `docker-compose.yml`, `render.yaml`).
 - Implement Phase 5: Automated CI/CD Pipeline (`.github/workflows/ci.yml`).
+- Implement Phase 6: Client Integration & Schema Contracts.

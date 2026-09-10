@@ -1,0 +1,58 @@
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# Operating system & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Python virtual environment & dependencies
+.venv/
+venv/
+env/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local configuration & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+
+# Datasets and raw files
+data/
+dataset/
+Brazilian E-Commerce-Public-Dataset-by-Olist/
+Marketing-Funnel-by-Olist/
+notebooks/
+*.csv
+*.xlsx
+*.parquet
+
+# dbt artifacts and local runs
+dbt/mercury_analytics/target/
+dbt/mercury_analytics/logs/
+dbt/mercury_analytics/dbt_packages/
+profiles.yml
+
+# Scratch & temporary files
+scratch/
+tmp/
+*.log

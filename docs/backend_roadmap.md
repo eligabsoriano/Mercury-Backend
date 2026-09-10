@@ -168,20 +168,31 @@ graph TD
 
 ---
 
-### Phase 4: Containerization & Cloud Deployment
+### Phase 4: Containerization & Cloud Deployment (✅ Complete)
 
-#### 4.1 Multi-Stage Production Dockerfile
-- `Dockerfile`: Multi-stage build using `python:3.13-slim`.
-- Installs production dependencies without compiler bloat.
-- Runs as an unprivileged user `mercury` (UID 1000).
-- Includes container `HEALTHCHECK` pointing to `/health`.
+#### 4.1 Multi-Stage Production Dockerfile (✅ Complete)
+- Created `Dockerfile` utilizing multi-stage architecture:
+  - Base image: `python:3.13-slim`.
+  - Stage 1 (`builder`): Compiles dependencies into isolated `/opt/venv` without leaving build compilers in the final layer.
+  - Stage 2 (`runner`): Stripped minimal runtime copying `/opt/venv`, creating unprivileged non-root user `mercury` (UID 1000, GID 1000).
+  - Container healthcheck (`HEALTHCHECK`): Queries `http://localhost:${PORT:-8000}/health` via `curl` with 30s interval, 5s timeout, and 3 retries.
+  - Configured `.dockerignore` excluding `.git`, `.venv`, `.env`, local caches, raw dataset files, and dbt build outputs.
 
-#### 4.2 Docker Compose Orchestration
-- `docker-compose.yml`: Defines the `backend` service with environment file binding, port mapping `8000:8000`, and volume mounts for development.
+#### 4.2 Docker Compose Orchestration (✅ Complete)
+- Created `docker-compose.yml`:
+  - Configures the `backend` service with `ports: ["8000:8000"]`.
+  - Binds `.env` environment file and sets default container runtime options.
+  - Mounts `./backend` and `./ml` directories read-only for high-velocity local hot-reloading.
+  - Includes container-level healthcheck probing `/health`.
 
-#### 4.3 Cloud Deployment Descriptors
-- `Procfile` for Heroku / Render / Railway: `web: uvicorn backend.main:app --host 0.0.0.0 --port $PORT`.
-- `render.yaml` infrastructure-as-code blueprint for automated zero-downtime deployment.
+#### 4.3 Cloud Deployment Descriptors (✅ Complete)
+- Created `Procfile` for Heroku / Render / Railway:
+  - `web: uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
+- Created `render.yaml` Infrastructure-as-Code blueprint for Render:
+  - Declares web service `mercury-backend` with zero-downtime healthcheck pointing to `/health`.
+  - Pre-populates environment schema with secure random key generation (`API_KEYS`, `JWT_SECRET_KEY`) and production settings.
+- Documented full deployment guide in `docs/deployment.md`.
+- Validated with 5 automated verification tests in `tests/test_deployment.py`.
 
 ---
 
