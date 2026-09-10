@@ -1,0 +1,14 @@
+{
+  "name": "mercury-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mercury Customer Intelligence Platform - Client Schemas and Tooling",
+  "scripts": {
+    "export:openapi": "([ -f .venv/bin/python ] && .venv/bin/python scripts/export_openapi.py || python3 scripts/export_openapi.py)",
+    "generate:types": "npx openapi-typescript openapi.json -o types/api.ts",
+    "codegen": "npm run export:openapi && npm run generate:types"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0"
+  }
+}

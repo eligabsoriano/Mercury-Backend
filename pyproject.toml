@@ -17,7 +17,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["backend", "ml", "etl"]
+known-first-party = ["backend", "ml", "etl", "scripts"]
 
 [tool.ruff.format]
 quote-style = "double"

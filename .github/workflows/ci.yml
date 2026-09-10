@@ -31,10 +31,10 @@ jobs:
           pip install -r requirements.txt
 
       - name: Lint checks (ruff check)
-        run: ruff check backend/ ml/ tests/
+        run: ruff check backend/ ml/ tests/ scripts/
 
       - name: Formatter checks (ruff format)
-        run: ruff format --check backend/ ml/ tests/
+        run: ruff format --check backend/ ml/ tests/ scripts/
 
       - name: Run test suite (pytest)
         env:

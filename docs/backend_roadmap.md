@@ -211,14 +211,21 @@ graph TD
 
 ---
 
-### Phase 6: Client Integration & Schema Contracts
+### Phase 6: Client Integration & Schema Contracts (✅ Complete)
 
-#### 6.1 Static OpenAPI & TypeScript Types
-- Add `scripts/export_openapi.py` to dump `openapi.json` without booting a live server.
-- Support `npx openapi-typescript openapi.json -o types/api.ts` for the React web dashboard and Flutter client schemas.
+#### 6.1 Static OpenAPI & TypeScript Types (✅ Complete)
+- Implemented `scripts/export_openapi.py` CLI script to dump standard OpenAPI 3.1 `openapi.json` (25 endpoints, 32 schemas) directly from the application instance without booting a running server.
+- Generated static `openapi.json` at repository root.
+- Generated end-to-end TypeScript interfaces `types/api.ts` (2,502 lines) via `npx openapi-typescript openapi.json -o types/api.ts` providing typed contracts for React and Flutter clients.
+- Added `package.json` with `npm run codegen`, `npm run export:openapi`, and `npm run generate:types` automated scripts.
 
-#### 6.2 Power BI Direct Query Documentation
-- Add `docs/powerbi_setup.md` detailing connection strings, table relationships, and DAX metric formulas connecting Microsoft Power BI to Neon PostgreSQL.
+#### 6.2 Power BI Direct Query Documentation (✅ Complete)
+- Authored comprehensive operational guide `docs/powerbi_setup.md`:
+  - Detailed Neon PostgreSQL connection parameters (`ep-...-pooler.neon.tech`, `sslmode=require`, DirectQuery vs Import trade-offs).
+  - Star-schema entity relationship configurations (`mart.dim_customers` -> `mart.fact_orders`, `mart.mart_customer_metrics`, `ml.rfm_segments`, `ml.churn_predictions`).
+  - Production DAX metric formulas: Total GMV, Total Orders, AOV, Repeat Purchase Rate, Portfolio Revenue at Risk, VIP Retention Exposure, High Risk Customer Count, Late Delivery Rate, and Average Review Rating.
+  - Report visual layouts and cloud scheduled refresh guidance.
+- Validated with 6 automated verification tests in `tests/test_client_contracts.py`.
 
 ---
 
