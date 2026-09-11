@@ -54,12 +54,14 @@ Mercury unifies **PostgreSQL**, **dbt**, **scikit-learn**, and **FastAPI** to de
 
 | Layer | Technology | Role |
 |:---|:---|:---|
-| **Database** | PostgreSQL 16 (Neon) | Relational storage for raw, staging, and analytics marts |
+| **Database** | PostgreSQL 16 (Neon) | Serverless relational storage for raw, staging, and analytics marts |
 | **Ingestion** | Python 3.13, `psycopg2` | High-throughput bulk loading via PostgreSQL `COPY` |
-| **Transformations** | `dbt-postgres` | Modular, test-driven SQL transformations (`staging`, `mart`) |
+| **Transformations** | `dbt-postgres` | Modular, test-driven SQL transformations (`staging`, `intermediate`, `mart`) |
 | **Analytics & ML** | `pandas`, `scikit-learn`, `numpy` | RFM quintile segmentation & supervised churn classification |
-| **API** | `FastAPI`, `Pydantic v2`, `uvicorn` | Programmatic decision-support REST endpoints |
-| **Reporting** | Microsoft Power BI | Executive KPI and customer retention dashboards |
+| **API & Security** | `FastAPI`, `Pydantic v2`, `uvicorn` | 25 REST endpoints with `X-API-Key` & Bearer JWT auth, rate limiting |
+| **Client Types** | TypeScript, OpenAPI 3.1 | Auto-generated type contracts (`types/api.ts`) for React & Flutter |
+| **Reporting** | Microsoft Power BI | DirectQuery star-schema dashboards & production DAX retention formulas |
+| **DevOps & CI/CD** | Docker, Docker Compose, GitHub Actions, Ruff | Containerization, local orchestration, and automated CI quality gates |
 
 ---
 
@@ -67,34 +69,56 @@ Mercury unifies **PostgreSQL**, **dbt**, **scikit-learn**, and **FastAPI** to de
 
 ```text
 mercury/
-├── backend/                  ← FastAPI application
-│   ├── routers/              ← REST route handlers
-│   ├── schemas/              ← Pydantic v2 request/response models
-│   └── services/             ← Business logic and database queries
-├── dataset/                  ← Raw Olist CSV directories (gitignored)
+├── .github/workflows/ci.yml   ← Automated GitHub Actions CI pipeline (Python 3.13, Ruff, Pytest)
+├── backend/                   ← FastAPI application (25 live endpoints)
+│   ├── cache.py               ← Thread-safe in-memory TTL caching engine
+│   ├── config.py              ← Runtime environment configuration
+│   ├── database.py            ← Tuned SQLAlchemy engine pool & health diagnostics
+│   ├── main.py                ← FastAPI app entrypoint, middleware, routers
+│   ├── middleware.py          ← X-Request-ID, X-Process-Time, access logs, 500 handler
+│   ├── rate_limit.py          ← In-memory sliding-window rate limiter (120 req/min)
+│   ├── security.py            ← API Key & HMAC-SHA256 JWT auth dependencies
+│   ├── routers/               ← Analytics, Customers, Products, Sellers, Auth, Health
+│   ├── schemas/               ← Pydantic v2 request/response models
+│   └── services/              ← Core analytics, search, and CSV streaming services
 ├── dbt/
-│   └── mercury_analytics/    ← dbt transformation project
-│       ├── macros/           ← Custom macros (e.g. generate_schema_name)
+│   └── mercury_analytics/     ← dbt transformation project
+│       ├── macros/            ← Custom schema name generator macros
 │       ├── models/
-│       │   ├── staging/      ← 7 staging views + 53 data tests
-│       │   ├── intermediate/ ← Customer order and friction rollups
-│       │   └── marts/        ← Mart models (mart_customer_metrics)
-│       ├── dbt_project.yml   ← dbt project configuration
-│       └── profiles.yml.example
-├── docs/                     ← In-depth technical & business documentation
-│   ├── architecture.md       ← Full system flow, data models, and API surface
-│   ├── methodology.md        ← RFM scoring, churn definitions, ML features
-│   ├── business_case.md      ← Retention matrix and SDG alignment
-│   └── bi_reporting.md       ← Power BI dashboards & client app specs
+│       │   ├── staging/       ← 7 staging views + 53 data tests
+│       │   ├── intermediate/  ← 6 customer-level aggregation rollups
+│       │   └── marts/         ← 3 analytics marts (mart_customer_metrics, dim_customers, fact_orders)
+│       └── dbt_project.yml
+├── docs/                      ← In-depth technical & business documentation
+│   ├── architecture.md        ← Full system flow, data models, and API surface
+│   ├── backend_roadmap.md     ← Complete backend development roadmap (all 6 phases complete)
+│   ├── bi_reporting.md        ← Power BI dashboards & client interface specs
+│   ├── business_case.md       ← The retention dilemma, prioritization matrix, and SDG alignment
+│   ├── deployment.md          ← Docker, Docker Compose, and Cloud PaaS operations guide
+│   ├── methodology.md         ← RFM scoring, churn definitions, and ML feature matrix
+│   └── powerbi_setup.md       ← Power BI DirectQuery connection, star-schema, and DAX formulas
 ├── etl/
-│   └── ingest.py             ← High-performance raw CSV ingestion runner
-├── ml/                       ← Feature engineering, RFM scoring, churn modeling
-│   └── artifacts/            ← Trained serialized models (gitignored)
+│   └── ingest.py              ← High-performance raw CSV ingestion runner
+├── ml/                        ← Feature engineering, RFM scoring, churn modeling
+│   └── artifacts/             ← Serialized model artifacts (churn_model.joblib)
+├── scripts/
+│   └── export_openapi.py      ← Programmatic OpenAPI 3.1 schema exporter
 ├── sql/
-│   ├── schema.sql            ← PostgreSQL DDL for raw.* tables and indexes
-│   ├── views.sql             ← Helper views (vw_ingestion_summary, etc.)
-│   └── migrate.py            ← Automated database migration runner
-└── requirements.txt          ← Pinned Python dependencies
+│   ├── schema.sql             ← PostgreSQL DDL for raw.* tables and indexes
+│   ├── views.sql              ← Helper views (vw_ingestion_summary, etc.)
+│   └── migrate.py             ← Automated database migration runner
+├── tests/                     ← Comprehensive 152-test automated test suite (13 modules)
+├── types/
+│   └── api.ts                 ← Auto-generated TypeScript types (2,502 lines)
+├── Dockerfile                 ← Multi-stage production container (python:3.13-slim, user mercury)
+├── docker-compose.yml         ← Multi-container local development orchestration
+├── openapi.json               ← Static OpenAPI 3.1 schema specification
+├── package.json               ← Client SDK codegen scripts (npm run codegen)
+├── Procfile                   ← PaaS process descriptor (Render / Railway / Heroku)
+├── pyproject.toml             ← Ruff linter/formatter configurations
+├── pytest.ini                 ← Pytest test runner settings
+├── render.yaml                ← Infrastructure-as-code deployment blueprint for Render
+└── requirements.txt           ← Pinned production and tooling dependencies
 ```
 
 ---
@@ -114,23 +138,35 @@ cp .env.example .env
 # Edit .env and supply your Neon PostgreSQL DATABASE_URL
 ```
 
-### 3. Apply PostgreSQL Schema Migrations
+### 3. Run FastAPI Backend Locally
 ```bash
-python sql/migrate.py
+uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+# Interactive documentation available at:
+# Swagger UI: http://localhost:8000/docs
+# ReDoc:      http://localhost:8000/redoc
 ```
 
-### 4. Bulk Ingest Raw CSV Datasets
+### 4. Run Automated Test Suite (152 Tests)
 ```bash
-# Ingests both Olist E-Commerce and Marketing Funnel datasets:
-python etl/ingest.py
+pytest tests/ -v
 ```
 
-### 5. Run & Test dbt Transformations
+### 5. Run Linter & Formatter (Ruff)
 ```bash
-cd dbt/mercury_analytics
-cp profiles.yml.example profiles.yml   # or build profiles.yml from .env
-dbt run --select staging --profiles-dir .
-dbt test --select staging --profiles-dir .
+ruff check backend/ ml/ tests/ scripts/
+ruff format --check backend/ ml/ tests/ scripts/
+```
+
+### 6. Client SDK Codegen (OpenAPI & TypeScript)
+```bash
+# Exports openapi.json and generates types/api.ts:
+npm run codegen
+```
+
+### 7. Run with Docker Compose
+```bash
+docker compose up -d
+docker compose logs -f backend
 ```
 
 ---
@@ -138,10 +174,13 @@ dbt test --select staging --profiles-dir .
 ## 📚 Detailed Documentation
 
 For comprehensive guides and mathematical methodologies, explore:
-- [docs/architecture.md](file:///Users/gab/Documents/GitHub/Mercury-Backend/docs/architecture.md) — System flow, schema dictionaries, and API contract.
-- [docs/methodology.md](file:///Users/gab/Documents/GitHub/Mercury-Backend/docs/methodology.md) — RFM distribution, time-bounded churn definitions, and revenue-at-risk formulas.
-- [docs/business_case.md](file:///Users/gab/Documents/GitHub/Mercury-Backend/docs/business_case.md) — The retention dilemma, prioritization matrix, and UN SDG alignment.
-- [docs/bi_reporting.md](file:///Users/gab/Documents/GitHub/Mercury-Backend/docs/bi_reporting.md) — Executive, Retention, and Seller dashboard specifications.
+- [docs/architecture.md](docs/architecture.md) — System flow, schema dictionaries, and 25-endpoint API contract.
+- [docs/backend_roadmap.md](docs/backend_roadmap.md) — Full 6-phase engineering roadmap with completion records.
+- [docs/deployment.md](docs/deployment.md) — Production Docker, Docker Compose, Render, and Railway deployment instructions.
+- [docs/powerbi_setup.md](docs/powerbi_setup.md) — Power BI DirectQuery connection parameters, star-schema model, and DAX metric formulas.
+- [docs/methodology.md](docs/methodology.md) — RFM quintile distribution, time-bounded churn definitions, and revenue-at-risk mathematics.
+- [docs/business_case.md](docs/business_case.md) — The retention dilemma, prioritization matrix, and SDG alignment.
+- [docs/bi_reporting.md](docs/bi_reporting.md) — Executive, Retention, and Seller dashboard specifications.
 
 ---
 

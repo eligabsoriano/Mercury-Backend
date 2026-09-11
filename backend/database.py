@@ -20,21 +20,28 @@ log = logging.getLogger(__name__)
 
 settings = get_settings()
 
-if not settings.database_url:
-    log.warning("DATABASE_URL environment variable is not set!")
+db_url = settings.database_url
+if not db_url:
+    log.warning(
+        "DATABASE_URL environment variable is not set! Using in-memory sqlite fallback engine."
+    )
+    db_url = "sqlite:///:memory:"
 
 # Neon / PostgreSQL connection pool settings:
 # - pool_pre_ping ensures stale/closed connections from serverless sleep are refreshed.
 # - pool_recycle prevents stale connections by recycling connections (default 300s).
 # - pool_size & max_overflow scaled for high-concurrency analytical throughput.
-engine = create_engine(
-    settings.database_url,
-    pool_pre_ping=True,
-    pool_recycle=settings.db_pool_recycle,
-    pool_size=settings.db_pool_size,
-    max_overflow=settings.db_max_overflow,
-    pool_timeout=settings.db_pool_timeout,
-)
+if db_url.startswith("sqlite"):
+    engine = create_engine(db_url)
+else:
+    engine = create_engine(
+        db_url,
+        pool_pre_ping=True,
+        pool_recycle=settings.db_pool_recycle,
+        pool_size=settings.db_pool_size,
+        max_overflow=settings.db_max_overflow,
+        pool_timeout=settings.db_pool_timeout,
+    )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
