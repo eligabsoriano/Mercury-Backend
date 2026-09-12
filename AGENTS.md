@@ -1,102 +1,71 @@
 # Project Identity
 
-Mercury is a customer intelligence and retention analytics platform for
-e-commerce businesses. It turns transaction data into customer segments,
-churn predictions, revenue-at-risk estimates, and retention recommendations.
+Mercury is a customer intelligence and retention analytics platform for e-commerce businesses. It turns transaction data into customer segments, churn predictions, revenue-at-risk estimates, and retention recommendations.
 
-This repository is independent. Do not assume that it is part of, or shares
-source code with, any other application.
+This repository is independent. Do not assume that it is part of, or shares source code with, any other application.
 
-# Scope and Technology
+# Instruction Priority Hierarchy
 
-- Data and analytics: Python, Pandas, NumPy, SQL, and Jupyter
-- Database: PostgreSQL, including Neon-hosted environments
-- Transformation: dbt (dbt-postgres)
-- Machine learning: scikit-learn and Matplotlib
-- API: FastAPI
-- Frontend: React, TypeScript, and Tailwind CSS
-- Mobile: Flutter and Dart
-- Reporting: Microsoft Power BI
-- Deployment targets: Vercel, Render, and Railway
+When instructions conflict, resolve them using this strict hierarchy:
+1. **User Task Prompt**: Explicit instructions and constraints in the immediate user prompt.
+2. **Active Project AGENTS.md**: Repository-level guardrails, autonomy policies, and definitions of done.
+3. **Invoked Skill Instructions**: Domain-specific guidance loaded via `.agents/skills/`.
+4. **Project Documentation**: Design docs in `docs/` (`architecture.md`, `methodology.md`).
+5. **Retrieved External Data**: Web search results, external references, or default model priors.
 
-The documented analytical flow is:
+# Autonomy & Decision Boundaries
 
-```text
-Olist Brazilian E-Commerce data -> ETL ingestion -> PostgreSQL (raw)
-    -> dbt transformations (staging, intermediate, mart) -> RFM & churn ML models
-    -> Power BI, FastAPI, React, and Mobile
-```
+## Autonomous (Proceed Without Asking)
+- Internal code modifications, bug fixes, and refactoring within existing architectural layers.
+- Creating and updating unit and integration test suites.
+- Running non-destructive local validation commands (`pytest tests/ -v`, `ruff check`, `ruff format`, `python scripts/export_openapi.py`).
+- Adding and updating documentation to reflect verified code changes.
+- Updating schema exports when API contracts change intentionally.
 
-# Repository Guidance
+## Require Explicit User Approval
+- Destructive database commands (e.g., `DROP TABLE`, `TRUNCATE`, destructive migrations) against live or remote databases (Neon).
+- Accessing, modifying, or creating live credentials, `.env` files, or cloud secrets.
+- Breaking existing public API response contracts or removing active endpoints.
+- Triggering production deployments or cloud infrastructure provisioning (Render, Railway, Vercel).
 
-Use the existing project documentation as the source of truth:
+# Scope and Current Baseline
 
-- `README.md`: project purpose, capabilities, stack, and status
-- `docs/architecture.md`: system flow, data model, API surface, and intended
-  project structure
-- `docs/methodology.md`: analytics and machine-learning methodology
-- Keep this file current as the implementation structure develops.
-
-The current checkout is documentation-first. Do not invent source directories
-or claim that an API, frontend, database, model, or deployment exists until it
-is present and verified in the repository.
+- **Data and analytics**: Python 3.13, Pandas, NumPy, SQL, and Jupyter.
+- **Database**: PostgreSQL (Neon-hosted), raw schema ingested from Olist Brazilian E-Commerce dataset.
+- **Transformation**: dbt Core (`dbt-postgres`) under `dbt/mercury_analytics/` with 5 analytical marts (`mart_customer_metrics`, `dim_customers`, `fact_orders`, `mart_product_metrics`, `mart_seller_metrics`).
+- **Machine learning**: scikit-learn (RFM segmentation and Random Forest churn prediction models under `ml/`).
+- **API**: FastAPI application under `backend/` exposing 25 REST endpoints across health, analytics, customer intelligence, predictions, retention, products, and sellers.
+- **Testing**: 152 automated tests in `tests/` (114 offline mock/unit tests, 38 live DB integration tests skipped without `DATABASE_URL`).
+- **Downstream targets**: React/TypeScript web app (`Mercury-Web`), Flutter mobile app, and Power BI reporting.
 
 # Working Rules
 
 - Check `git status --short` before editing and preserve unrelated changes.
-- Keep changes focused and consistent with nearby files and documentation.
-- Prefer existing libraries, helpers, schemas, and project conventions.
-- Do not add dependencies, rename broad sections, or reformat unrelated files
-  without a clear need.
-- Keep data preparation, SQL, machine-learning, API, frontend, and reporting
-  concerns in their owning directories as the implementation grows.
-- Keep API validation and response shaping in the FastAPI boundary; keep
-  analytics and business rules in the appropriate data or service layer.
-- Use parameterized SQL and validate external input. Do not expose database
-  credentials or sensitive customer data through API responses or logs.
-- Add or update documentation when the data model, API contract, analytical
-  methodology, or user-facing workflow changes.
-
-# Sensitive Data and Operations
-
-- Never read, print, commit, or modify secrets, `.env` files, database URLs,
-  API keys, private credentials, customer exports, raw personal data, or
-  production datasets unless explicitly required and approved.
-- Use an example configuration file for documenting required environment
-  variables. Keep real values local.
-- Do not run destructive database commands, production migrations, deployments,
-  or data backfills without explicit approval.
-- Treat raw datasets, generated reports, model artifacts, build output, and
-  dependency directories as protected or generated unless the task requires
-  changing them.
+- Keep changes focused, minimal, and consistent with nearby files and conventions.
+- Keep data preparation, SQL, machine-learning, API, and reporting concerns in their owning directories:
+  - `backend/`: FastAPI application, routers, schemas, services, and database session management.
+  - `dbt/`: dbt models (staging, intermediate, marts), tests, and schema configurations under `dbt/mercury_analytics/`.
+  - `ml/`: Model training pipelines, feature engineering, and inference artifacts.
+  - `docs/`: Technical specifications, architectural designs, and analytical methodologies.
+- Keep API validation and response shaping in Pydantic schemas at the FastAPI boundary; keep analytical logic in services or marts.
+- Use parameterized SQL always (`sqlalchemy.text` with explicit parameter dictionaries). Never concatenate user input into SQL queries.
+- Never log, print, or expose database credentials, tokens, or sensitive customer data.
 
 # Implementation Workflow
 
-1. Identify the owning area: data preparation, SQL, machine learning, API,
-   frontend, or Power BI/reporting.
-2. Read the relevant documentation and nearby implementation or tests.
-3. State the root cause or intended behavior before changing code.
-4. Make the smallest maintainable change and preserve existing contracts.
-5. Run the cheapest focused validation first, then broader checks proportional
-   to the change.
-6. Review the final diff and report what was changed, verified, and not run.
+1. **Identify the Owning Layer**: Determine whether the change belongs in `backend/`, `dbt/`, `ml/`, or `docs/`.
+2. **Read Existing Contracts**: Check relevant schemas, models, tests, or documentation before writing code.
+3. **Make Focused Changes**: Preserve existing working contracts and make the smallest maintainable edit.
+4. **Proportional Verification**:
+   - Documentation changes: verify markdown rendering, links, and structure.
+   - Code changes: run focused tests first, then project linter and test suite.
+   - API changes: verify response shapes and update OpenAPI schema export.
+5. **Review Diff**: Ensure zero unrelated diffs and clear reporting of verification results.
 
-For data and machine-learning changes, verify schemas, null handling, leakage
-risk, reproducibility, and metric calculations. For API changes, verify input
-validation, status codes, response shapes, and error handling. For frontend
-changes, verify loading, empty, error, and responsive states.
+# Definition of Done (DoD)
 
-# Testing and Validation
-
-- Documentation-only changes require path/structure checks and a clean status
-  review; unrelated runtime suites are unnecessary.
-- Python/data changes should use focused tests or reproducible validation
-  scripts, followed by the project-wide test command when available.
-- SQL changes should be checked against the documented PostgreSQL schema and
-  representative edge cases.
-- FastAPI changes should include focused endpoint tests where the test suite
-  exists, including invalid input and error responses.
-- React/TypeScript changes should use the configured type-check, lint, test,
-  and build commands when those scripts exist.
-- Never claim live database, external-service, deployment, browser, or
-  Power BI validation without actually running it.
+A task or feature is considered complete only when:
+1. **Linting & Formatting**: Code passes `.venv/bin/ruff check backend/ ml/ tests/ scripts/` and `.venv/bin/ruff format --check backend/ ml/ tests/ scripts/` with zero errors.
+2. **Automated Tests**: The test suite passes cleanly via `.venv/bin/pytest tests/ -v` (zero failures).
+3. **API Synchronization**: If FastAPI routers or schemas were altered, `python scripts/export_openapi.py` has been executed to synchronize `docs/openapi.json`.
+4. **Documentation**: Any changes to data models, API endpoints, or methodology are accurately documented in `docs/architecture.md` or `docs/methodology.md`.

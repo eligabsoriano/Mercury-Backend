@@ -88,6 +88,8 @@ The raw ingestion layer preserves source column names exactly.
 - `mart_customer_metrics` (93,358 rows) — central Customer Intelligence table aggregated strictly by `customer_unique_id` with RFM base metrics, recency_days, delivery delay, and review sentiment
 - `dim_customers` (93,358 rows) — star-schema dimension table with primary location, tenure, and repeat buyer flag
 - `fact_orders` (96,478 rows) — star-schema order fact table linking order lifecycle, items, payments, and reviews
+- `mart_product_metrics` (32,951 rows) — product-level catalog performance, orders, units sold, GMV, average price, review scores, and repeat customer volume
+- `mart_seller_metrics` (3,095 rows) — seller-level fulfillment velocity, total orders, GMV, average delivery delay days, and customer satisfaction metrics
 
 ## Performance & In-Memory Caching Layer (`backend/cache.py`)
 
@@ -137,6 +139,17 @@ The raw ingestion layer preserves source column names exactly.
 | **Sellers** | `GET /api/sellers/{id}` | Individual seller 360 profile with top categories |
 | **Docs** | `GET /docs`, `/redoc`, `/openapi.json` | Interactive Swagger UI, ReDoc, and OpenAPI spec |
 
+## Client Interfaces & Downstream Contracts
+
+Client applications consume typed API contracts synchronized from the FastAPI OpenAPI 3.1 specification:
+- **OpenAPI 3.1 Spec**: [openapi.json](../openapi.json) (exported via `python scripts/export_openapi.py`).
+- **TypeScript Interface Definitions**: [types/api.ts](../types/api.ts) (2,502 lines generated via `npm run codegen`).
+
+### Consumer Applications
+- **Web Application (`Mercury-Web`)**: Built with React, TypeScript, and Tailwind CSS. Features Executive Overview KPIs, Customer Intelligence Directory, Customer 360 Deep-Dive, and Action Workspace for retention list export (`GET /api/customers/export`).
+- **Mobile Application**: Built with Flutter and Dart for on-the-go decision support, high-risk churn alerts, and on-demand customer lookup.
+- **Power BI Dashboards**: DirectQuery analytics on Neon PostgreSQL star-schema (`dim_customers`, `fact_orders`, `mart_customer_metrics`). See [docs/powerbi_setup.md](powerbi_setup.md).
+
 ## Technology Stack
 
 | Area | Technology |
@@ -174,13 +187,12 @@ mercury/
 │       ├── models/
 │       │   ├── staging/      ← 7 staging views + 53 data tests
 │       │   ├── intermediate/ ← 6 intermediate customer rollups
-│       │   └── marts/        ← 3 mart tables (mart_customer_metrics, dim_customers, fact_orders)
+│       │   └── marts/        ← 5 mart tables (mart_customer_metrics, dim_customers, fact_orders, mart_product_metrics, mart_seller_metrics)
 │       ├── macros/           ← Custom schema name generator macros
 │       └── dbt_project.yml
 ├── docs/                     ← System documentation
 │   ├── architecture.md       ← Full system flow, data models, and API surface
-│   ├── backend_roadmap.md    ← Complete backend development roadmap (all 6 phases complete)
-│   ├── bi_reporting.md       ← Power BI & Client interface functional specifications
+│   ├── backend_roadmap.md    ← Complete backend development roadmap (all 7 phases complete)
 │   ├── business_case.md      ← Retention dilemma and SDG business justification
 │   ├── deployment.md         ← Docker, Docker Compose, and Cloud PaaS operations guide
 │   ├── methodology.md        ← RFM quintile scoring and ML churn methodology

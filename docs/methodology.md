@@ -136,3 +136,19 @@ The analytical outputs are exposed through:
    - Operational factors: Late delivery correlation with review scores and subsequent customer churn.
 2. **FastAPI Services**:
    - Programmatic access for web and mobile clients to query customer segments, individual customer risk scorecards, and prioritized retention lists.
+
+---
+
+## 8. Analytics & ML Engineering Review Checklist
+
+Use this checklist when developing, auditing, or reviewing analytics pipelines and machine-learning models:
+
+1. **Source Data & Grain**: Confirm the source dataset, entity grain, key definitions, and explicit null-handling policies.
+2. **Temporal Leakage**: Prevent temporal leakage by deriving features strictly from information available at or before prediction time.
+3. **Validation Strategy**: Split training and evaluation datasets by time or customer cohort as appropriate (avoid random K-Fold splits on time-series records).
+4. **Comprehensive Evaluation**: Report class balance, baseline comparisons, precision/recall at $K$, calibration curves, and business financial impact.
+5. **Artifact Versioning**: Version preprocessing pipelines, feature schemas, model artifacts, and evaluation baseline metrics.
+6. **Deterministic Inference**: Keep model inference deterministic, reproducible, and decoupled from exploratory research notebooks.
+7. **Operational Metadata**: Expose model confidence, feature contributions, and last-refresh metadata through API responses where useful.
+8. **Edge-Case & Metric Testing**: Maintain automated tests for metric calculations, empty inputs, duplicate transactions, and boundary cutoff dates.
+
