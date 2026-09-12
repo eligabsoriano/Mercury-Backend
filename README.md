@@ -58,7 +58,7 @@ Mercury unifies **PostgreSQL**, **dbt**, **scikit-learn**, and **FastAPI** to de
 | **Ingestion** | Python 3.13, `psycopg2` | High-throughput bulk loading via PostgreSQL `COPY` |
 | **Transformations** | `dbt-postgres` | Modular, test-driven SQL transformations (`staging`, `intermediate`, `mart`) |
 | **Analytics & ML** | `pandas`, `scikit-learn`, `numpy` | RFM quintile segmentation & supervised churn classification |
-| **API & Security** | `FastAPI`, `Pydantic v2`, `uvicorn` | 39 REST endpoints with `X-API-Key` & Bearer JWT auth, rate limiting |
+| **API & Security** | `FastAPI`, `Pydantic v2`, `uvicorn` | 40 REST endpoints with `X-API-Key` & Bearer JWT auth, rate limiting |
 | **Client Types** | TypeScript, OpenAPI 3.1 | Auto-generated type contracts (`types/api.ts`) for React & Flutter |
 | **Reporting** | Microsoft Power BI | DirectQuery star-schema dashboards & production DAX retention formulas |
 | **DevOps & CI/CD** | Docker, Docker Compose, GitHub Actions, Ruff | Containerization, local orchestration, and automated CI quality gates |
@@ -70,7 +70,7 @@ Mercury unifies **PostgreSQL**, **dbt**, **scikit-learn**, and **FastAPI** to de
 ```text
 mercury/
 ├── .github/workflows/ci.yml   ← Automated GitHub Actions CI pipeline (Python 3.13, Ruff, Pytest)
-├── backend/                   ← FastAPI application (39 live endpoints)
+├── backend/                   ← FastAPI application (40 live endpoints)
 │   ├── cache.py               ← Thread-safe in-memory TTL caching engine
 │   ├── config.py              ← Runtime environment configuration
 │   ├── database.py            ← Tuned SQLAlchemy engine pool & health diagnostics
@@ -80,7 +80,7 @@ mercury/
 │   ├── security.py            ← API Key & HMAC-SHA256 JWT auth dependencies
 │   ├── routers/               ← Analytics, Customers, Products, Sellers, Retention, Marketing, Auth, Health
 │   ├── schemas/               ← Pydantic v2 request/response models
-│   └── services/              ← Analytics, customer, seller, marketing, prediction, and retention services
+│   └── services/              ← Analytics, customer, seller, marketing, pipeline, prediction, and retention services
 ├── dbt/
 │   └── mercury_analytics/     ← dbt transformation project
 │       ├── macros/            ← Custom schema name generator macros
@@ -101,14 +101,15 @@ mercury/
 ├── ml/                        ← Feature engineering, RFM scoring, churn modeling
 │   └── artifacts/             ← Serialized model artifacts (churn_model.joblib)
 ├── scripts/
-│   └── export_openapi.py      ← Programmatic OpenAPI 3.1 schema exporter
+│   ├── export_openapi.py      ← Programmatic OpenAPI 3.1 schema exporter
+│   └── run_pipeline.py        ← Unified production pipeline runner & orchestrator
 ├── sql/
 │   ├── schema.sql             ← PostgreSQL DDL for raw.* tables and indexes
 │   ├── views.sql              ← Helper views (vw_ingestion_summary, etc.)
 │   └── migrate.py             ← Automated database migration runner
-├── tests/                     ← Comprehensive 192-test automated test suite (15 modules)
+├── tests/                     ← Comprehensive 202-test automated test suite (16 modules)
 ├── types/
-│   └── api.ts                 ← Auto-generated TypeScript types (4,237 lines)
+│   └── api.ts                 ← Auto-generated TypeScript types (4,451 lines)
 ├── Dockerfile                 ← Multi-stage production container (python:3.13-slim, user mercury)
 ├── docker-compose.yml         ← Multi-container local development orchestration
 ├── openapi.json               ← Static OpenAPI 3.1 schema specification
@@ -145,9 +146,9 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 # ReDoc:      http://localhost:8000/redoc
 ```
 
-### 4. Run Automated Test Suite (192 Tests)
+### 4. Run Automated Test Suite (202 Tests)
 ```bash
-# Runs 154 offline unit/mock tests (38 live DB tests are cleanly skipped when DATABASE_URL is unset)
+# Runs 164 offline unit/mock tests (38 live DB tests are cleanly skipped when DATABASE_URL is unset)
 pytest tests/ -v
 ```
 
@@ -163,7 +164,16 @@ ruff format --check backend/ ml/ tests/ scripts/
 npm run codegen
 ```
 
-### 7. Run with Docker Compose
+### 7. Run Unified Pipeline Orchestrator
+```bash
+# Dry-run validation (verifies prerequisites and environment without writes):
+python scripts/run_pipeline.py --dry-run
+
+# Full live execution (Ingest -> dbt -> RFM -> Churn ML -> Codegen):
+python scripts/run_pipeline.py
+```
+
+### 8. Run with Docker Compose
 ```bash
 docker compose up -d
 docker compose logs -f backend
@@ -174,8 +184,8 @@ docker compose logs -f backend
 ## 📚 Detailed Documentation
 
 For comprehensive guides and mathematical methodologies, explore:
-- [docs/architecture.md](docs/architecture.md) — System flow, schema dictionaries, and 39-endpoint API contract.
-- [docs/backend_roadmap.md](docs/backend_roadmap.md) — Full engineering roadmap (Phases 1-11 with Phase 10 active).
+- [docs/architecture.md](docs/architecture.md) — System flow, schema dictionaries, and 40-endpoint API contract.
+- [docs/backend_roadmap.md](docs/backend_roadmap.md) — Full engineering roadmap (Phases 1-11, 100% Complete).
 - [docs/deployment.md](docs/deployment.md) — Production Docker, Docker Compose, Render, and Railway deployment instructions.
 - [docs/powerbi_setup.md](docs/powerbi_setup.md) — Power BI DirectQuery connection parameters, star-schema model, and DAX metric formulas.
 - [docs/methodology.md](docs/methodology.md) — RFM quintile distribution, time-bounded churn definitions, and revenue-at-risk mathematics.

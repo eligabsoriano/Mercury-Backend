@@ -108,13 +108,14 @@ The raw ingestion layer preserves source column names exactly.
 - **In-Memory Rate Limiting**: Sliding-window counter with monotonic timestamps returning HTTP 429 Too Many Requests and `Retry-After` header when requests exceed 120 req/min per IP.
 - **Request Tracing & Latency Headers**: Attaches unique `X-Request-ID` (UUID4) and `X-Process-Time` (in milliseconds) to all HTTP responses. Structured access logs emitted under `mercury.access`.
 
-## API Surface (backend/ — 39 Live Endpoints)
+## API Surface (backend/ — 40 Live Endpoints)
 
 | Category | Method & Path | Description |
 |:---|:---|:---|
 | **System** | `GET /` | API Root and navigation directory index |
 | **System** | `GET /health` | System health check and database latency ping |
 | **System** | `GET /api/health` | Diagnostic health alias |
+| **System** | `GET /api/health/pipeline` | End-to-end data pipeline freshness, table counts, and ML model observability |
 | **Auth** | `POST /api/auth/token` | Issue signed HMAC-SHA256 JWT Bearer access token |
 | **Auth** | `GET /api/auth/me` | Inspect authenticated caller identity and scopes |
 | **Analytics** | `GET /api/analytics/overview` | Macro portfolio KPIs (GMV, AOV, repeat rate, RAR) |
@@ -153,11 +154,17 @@ The raw ingestion layer preserves source column names exactly.
 | **Sellers** | `GET /api/sellers/{id}` | Individual seller 360 profile with top categories |
 | **Docs** | `GET /docs`, `/redoc`, `/openapi.json` | Interactive Swagger UI, ReDoc, and OpenAPI spec |
 
+## Production Pipeline Orchestration (`scripts/run_pipeline.py`)
+
+A unified resilient runner script automating the full data lifecycle:
+- **Execution Chain**: Database ping $\rightarrow$ Raw COPY Ingest (`etl/ingest.py`) $\rightarrow$ dbt compilation, run & data tests (`dbt/mercury_analytics`) $\rightarrow$ RFM scoring (`ml/rfm.py`) $\rightarrow$ Churn ML inference (`ml/churn.py`) $\rightarrow$ Client codegen (`scripts/export_openapi.py`).
+- **Telemetry & Safety**: Phase-by-phase execution timing, `--steps` filtering, `--dry-run` validation, `--truncate` clean loading, and persistence of status diagnostics in `pipeline_status.json`.
+
 ## Client Interfaces & Downstream Contracts
 
 Client applications consume typed API contracts synchronized from the FastAPI OpenAPI 3.1 specification:
 - **OpenAPI 3.1 Spec**: [openapi.json](../openapi.json) (exported via `python scripts/export_openapi.py`).
-- **TypeScript Interface Definitions**: [types/api.ts](../types/api.ts) (4,237 lines generated via `npm run codegen`).
+- **TypeScript Interface Definitions**: [types/api.ts](../types/api.ts) (4,451 lines generated via `npm run codegen`).
 
 ### Consumer Applications
 - **Web Application (`Mercury-Web`)**: Built with React, TypeScript, and Tailwind CSS. Features Executive Overview KPIs, Customer Intelligence Directory, Customer 360 Deep-Dive, and Action Workspace for retention list export (`GET /api/customers/export`).

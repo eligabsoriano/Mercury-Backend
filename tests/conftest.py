@@ -518,6 +518,26 @@ class MockSession:
         sql = str(statement).strip()
         params = params or {}
 
+        # ── 0. Pipeline Observability Health Checks ─────────────────────────
+        if "raw_orders" in sql and "mart_customer_metrics" in sql:
+            row = MockRow(
+                {
+                    "raw_orders": 99441,
+                    "raw_customers": 96096,
+                    "mart_customer_metrics": 93358,
+                    "mart_fact_orders": 99441,
+                    "mart_marketing_funnel": 8000,
+                    "ml_rfm_segments": 93358,
+                    "ml_churn_predictions": 93358,
+                }
+            )
+            return MockResult([row])
+
+        if "SELECT MAX(order_purchase_timestamp)" in sql:
+            return MockResult(
+                [MockRow({"max_ts": "2018-10-17 17:30:18"})], scalar_val="2018-10-17 17:30:18"
+            )
+
         # ── 1. Products ─────────────────────────────────────────────────────
         if "FROM mart.mart_product_metrics" in sql:
             # a. Count query

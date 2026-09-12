@@ -384,6 +384,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/health/pipeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Data pipeline and ML model health check
+         * @description Evaluate end-to-end data pipeline freshness, table counts across schemas,
+         *     ML model artifact status, and operational anomalies.
+         */
+        get: operations["pipeline_health_api_health_pipeline_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/marketing/channels": {
         parameters: {
             query?: never;
@@ -1787,6 +1808,24 @@ export interface components {
             zip_prefix?: string | null;
         };
         /**
+         * DataFreshnessMetrics
+         * @description Data freshness and recency indicators across the analytical marts.
+         */
+        DataFreshnessMetrics: {
+            /**
+             * Last Order Timestamp
+             * @description Most recent order purchase timestamp in the data mart
+             */
+            last_order_timestamp?: string | null;
+            /** @description Metadata of the last orchestrator run */
+            last_pipeline_run?: components["schemas"]["PipelineRunRecord"] | null;
+            /**
+             * Pipeline Freshness Status
+             * @description Freshness status (fresh / stale / unknown)
+             */
+            pipeline_freshness_status: string;
+        };
+        /**
          * FeatureContribution
          * @description Explains an individual feature's impact on the churn probability prediction.
          */
@@ -1979,6 +2018,47 @@ export interface components {
             pagination: components["schemas"]["PaginationMeta"];
         };
         /**
+         * ModelArtifactMetrics
+         * @description Status, metadata, and drift indicators for the churn ML model artifact.
+         */
+        ModelArtifactMetrics: {
+            /**
+             * Artifact Found
+             * @description Whether the serialized joblib model exists on disk
+             */
+            artifact_found: boolean;
+            /**
+             * Artifact Path
+             * @description File path to the serialized model artifact
+             */
+            artifact_path: string;
+            /**
+             * Features Count
+             * @description Number of feature columns expected by the model
+             */
+            features_count?: number | null;
+            /**
+             * File Size Bytes
+             * @description Model artifact file size in bytes
+             */
+            file_size_bytes?: number | null;
+            /**
+             * Is Trained
+             * @description Whether the model is fitted and ready for inference
+             */
+            is_trained: boolean;
+            /**
+             * Last Modified
+             * @description ISO timestamp of last artifact modification
+             */
+            last_modified?: string | null;
+            /**
+             * Model Type
+             * @description Classifier algorithm class name
+             */
+            model_type?: string | null;
+        };
+        /**
          * ModelMetadataResponse
          * @description Metadata, feature schema, and evaluation metrics for the active serving model.
          */
@@ -2051,6 +2131,79 @@ export interface components {
              * @description Total number of pages
              */
             total_pages: number;
+        };
+        /**
+         * PipelineHealthResponse
+         * @description Consolidated pipeline observability, data freshness, and model diagnostic response.
+         */
+        PipelineHealthResponse: {
+            /**
+             * Anomalies
+             * @description Detected pipeline anomalies, drift, or integrity alerts
+             */
+            anomalies?: string[];
+            /**
+             * Database Connected
+             * @description Whether the database connection is active
+             */
+            database_connected: boolean;
+            /**
+             * Database Latency Ms
+             * @description Database ping latency in milliseconds
+             */
+            database_latency_ms?: number | null;
+            /** @description Data freshness and recency tracking */
+            freshness: components["schemas"]["DataFreshnessMetrics"];
+            /** @description Model artifact storage and metadata status */
+            model: components["schemas"]["ModelArtifactMetrics"];
+            /**
+             * Status
+             * @description Overall pipeline health status (ok / warning / degraded)
+             */
+            status: string;
+            /** @description Current row counts across storage schemas */
+            table_counts: components["schemas"]["TableCountMetrics"];
+            /**
+             * Timestamp
+             * @description ISO 8601 UTC timestamp of the health check
+             */
+            timestamp: string;
+        };
+        /**
+         * PipelineRunRecord
+         * @description Summary metadata of the most recent pipeline execution.
+         */
+        PipelineRunRecord: {
+            /**
+             * Duration Seconds
+             * @description Total execution duration in seconds
+             */
+            duration_seconds?: number | null;
+            /**
+             * End Time
+             * @description Execution completion timestamp
+             */
+            end_time?: string | null;
+            /**
+             * Run Id
+             * @description Unique execution run ID
+             */
+            run_id?: string | null;
+            /**
+             * Start Time
+             * @description Execution start timestamp
+             */
+            start_time?: string | null;
+            /**
+             * Status
+             * @description Run status (success / failed / partial)
+             */
+            status: string;
+            /**
+             * Steps Executed
+             * @description List of pipeline steps executed
+             */
+            steps_executed?: string[];
         };
         /**
          * PoolAllocation
@@ -2854,6 +3007,47 @@ export interface components {
             zip_prefix?: string | null;
         };
         /**
+         * TableCountMetrics
+         * @description Row count metrics across raw, analytics mart, and ML prediction schemas.
+         */
+        TableCountMetrics: {
+            /**
+             * Mart Customer Metrics
+             * @description Row count in mart.mart_customer_metrics
+             */
+            mart_customer_metrics: number;
+            /**
+             * Mart Fact Orders
+             * @description Row count in mart.fact_orders
+             */
+            mart_fact_orders: number;
+            /**
+             * Mart Marketing Funnel
+             * @description Row count in mart.mart_marketing_funnel
+             */
+            mart_marketing_funnel: number;
+            /**
+             * Ml Churn Predictions
+             * @description Row count in ml.churn_predictions
+             */
+            ml_churn_predictions: number;
+            /**
+             * Ml Rfm Segments
+             * @description Row count in ml.rfm_segments
+             */
+            ml_rfm_segments: number;
+            /**
+             * Raw Customers
+             * @description Row count in raw.customers
+             */
+            raw_customers: number;
+            /**
+             * Raw Orders
+             * @description Row count in raw.orders
+             */
+            raw_orders: number;
+        };
+        /**
          * TokenRequest
          * @description Payload for requesting an access token.
          */
@@ -3582,6 +3776,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    pipeline_health_api_health_pipeline_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PipelineHealthResponse"];
                 };
             };
         };

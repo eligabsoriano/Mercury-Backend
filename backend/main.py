@@ -142,6 +142,7 @@ def root_index() -> JSONResponse:
             },
             "endpoints": {
                 "health": "/health",
+                "pipeline_health": "/api/health/pipeline",
                 "auth_token": "/api/auth/token",
                 "auth_identity": "/api/auth/me",
                 "portfolio_overview": "/api/analytics/overview",

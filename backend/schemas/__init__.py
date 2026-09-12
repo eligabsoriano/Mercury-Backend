@@ -43,6 +43,13 @@ from backend.schemas.marketing import (
     VelocityByLeadType,
     VelocityBySegment,
 )
+from backend.schemas.pipeline import (
+    DataFreshnessMetrics,
+    ModelArtifactMetrics,
+    PipelineHealthResponse,
+    PipelineRunRecord,
+    TableCountMetrics,
+)
 from backend.schemas.prediction import (
     ChurnPredictionInput,
     ChurnPredictionResult,
@@ -110,4 +117,9 @@ __all__ = [
     "SegmentPerformanceResponse",
     "MarketingLeadSummary",
     "MarketingLeadsListResponse",
+    "TableCountMetrics",
+    "PipelineRunRecord",
+    "DataFreshnessMetrics",
+    "ModelArtifactMetrics",
+    "PipelineHealthResponse",
 ]

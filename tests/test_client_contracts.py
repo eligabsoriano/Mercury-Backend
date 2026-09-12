@@ -55,6 +55,7 @@ def test_static_openapi_json_exists_and_valid() -> None:
         "/",
         "/health",
         "/api/health",
+        "/api/health/pipeline",
         "/api/auth/token",
         "/api/auth/me",
         "/api/analytics/overview",
@@ -115,6 +116,7 @@ def test_typescript_types_exist_and_complete() -> None:
         "SalesVelocityMetrics",
         "SegmentPerformanceResponse",
         "MarketingLeadsListResponse",
+        "PipelineHealthResponse",
     ]
     for schema_name in expected_schemas:
         assert schema_name in content, f"Expected schema '{schema_name}' in types/api.ts"

@@ -1660,6 +1660,44 @@
         "title": "CustomerSummary",
         "type": "object"
       },
+      "DataFreshnessMetrics": {
+        "description": "Data freshness and recency indicators across the analytical marts.",
+        "properties": {
+          "last_order_timestamp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Most recent order purchase timestamp in the data mart",
+            "title": "Last Order Timestamp"
+          },
+          "last_pipeline_run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PipelineRunRecord"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Metadata of the last orchestrator run"
+          },
+          "pipeline_freshness_status": {
+            "description": "Freshness status (fresh / stale / unknown)",
+            "title": "Pipeline Freshness Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pipeline_freshness_status"
+        ],
+        "title": "DataFreshnessMetrics",
+        "type": "object"
+      },
       "FeatureContribution": {
         "description": "Explains an individual feature's impact on the churn probability prediction.",
         "properties": {
@@ -1965,6 +2003,83 @@
         "title": "MarketingLeadsListResponse",
         "type": "object"
       },
+      "ModelArtifactMetrics": {
+        "description": "Status, metadata, and drift indicators for the churn ML model artifact.",
+        "properties": {
+          "artifact_found": {
+            "description": "Whether the serialized joblib model exists on disk",
+            "title": "Artifact Found",
+            "type": "boolean"
+          },
+          "artifact_path": {
+            "description": "File path to the serialized model artifact",
+            "title": "Artifact Path",
+            "type": "string"
+          },
+          "features_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Number of feature columns expected by the model",
+            "title": "Features Count"
+          },
+          "file_size_bytes": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Model artifact file size in bytes",
+            "title": "File Size Bytes"
+          },
+          "is_trained": {
+            "description": "Whether the model is fitted and ready for inference",
+            "title": "Is Trained",
+            "type": "boolean"
+          },
+          "last_modified": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ISO timestamp of last artifact modification",
+            "title": "Last Modified"
+          },
+          "model_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Classifier algorithm class name",
+            "title": "Model Type"
+          }
+        },
+        "required": [
+          "artifact_found",
+          "artifact_path",
+          "is_trained"
+        ],
+        "title": "ModelArtifactMetrics",
+        "type": "object"
+      },
       "ModelMetadataResponse": {
         "description": "Metadata, feature schema, and evaluation metrics for the active serving model.",
         "properties": {
@@ -2073,6 +2188,140 @@
           "has_prev"
         ],
         "title": "PaginationMeta",
+        "type": "object"
+      },
+      "PipelineHealthResponse": {
+        "description": "Consolidated pipeline observability, data freshness, and model diagnostic response.",
+        "properties": {
+          "anomalies": {
+            "description": "Detected pipeline anomalies, drift, or integrity alerts",
+            "items": {
+              "type": "string"
+            },
+            "title": "Anomalies",
+            "type": "array"
+          },
+          "database_connected": {
+            "description": "Whether the database connection is active",
+            "title": "Database Connected",
+            "type": "boolean"
+          },
+          "database_latency_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Database ping latency in milliseconds",
+            "title": "Database Latency Ms"
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/DataFreshnessMetrics",
+            "description": "Data freshness and recency tracking"
+          },
+          "model": {
+            "$ref": "#/components/schemas/ModelArtifactMetrics",
+            "description": "Model artifact storage and metadata status"
+          },
+          "status": {
+            "description": "Overall pipeline health status (ok / warning / degraded)",
+            "title": "Status",
+            "type": "string"
+          },
+          "table_counts": {
+            "$ref": "#/components/schemas/TableCountMetrics",
+            "description": "Current row counts across storage schemas"
+          },
+          "timestamp": {
+            "description": "ISO 8601 UTC timestamp of the health check",
+            "title": "Timestamp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "timestamp",
+          "database_connected",
+          "table_counts",
+          "freshness",
+          "model"
+        ],
+        "title": "PipelineHealthResponse",
+        "type": "object"
+      },
+      "PipelineRunRecord": {
+        "description": "Summary metadata of the most recent pipeline execution.",
+        "properties": {
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Total execution duration in seconds",
+            "title": "Duration Seconds"
+          },
+          "end_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Execution completion timestamp",
+            "title": "End Time"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Unique execution run ID",
+            "title": "Run Id"
+          },
+          "start_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Execution start timestamp",
+            "title": "Start Time"
+          },
+          "status": {
+            "description": "Run status (success / failed / partial)",
+            "title": "Status",
+            "type": "string"
+          },
+          "steps_executed": {
+            "description": "List of pipeline steps executed",
+            "items": {
+              "type": "string"
+            },
+            "title": "Steps Executed",
+            "type": "array"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "PipelineRunRecord",
         "type": "object"
       },
       "PoolAllocation": {
@@ -3254,6 +3503,64 @@
           "seller_id"
         ],
         "title": "SellerSummary",
+        "type": "object"
+      },
+      "TableCountMetrics": {
+        "description": "Row count metrics across raw, analytics mart, and ML prediction schemas.",
+        "properties": {
+          "mart_customer_metrics": {
+            "description": "Row count in mart.mart_customer_metrics",
+            "minimum": 0.0,
+            "title": "Mart Customer Metrics",
+            "type": "integer"
+          },
+          "mart_fact_orders": {
+            "description": "Row count in mart.fact_orders",
+            "minimum": 0.0,
+            "title": "Mart Fact Orders",
+            "type": "integer"
+          },
+          "mart_marketing_funnel": {
+            "description": "Row count in mart.mart_marketing_funnel",
+            "minimum": 0.0,
+            "title": "Mart Marketing Funnel",
+            "type": "integer"
+          },
+          "ml_churn_predictions": {
+            "description": "Row count in ml.churn_predictions",
+            "minimum": 0.0,
+            "title": "Ml Churn Predictions",
+            "type": "integer"
+          },
+          "ml_rfm_segments": {
+            "description": "Row count in ml.rfm_segments",
+            "minimum": 0.0,
+            "title": "Ml Rfm Segments",
+            "type": "integer"
+          },
+          "raw_customers": {
+            "description": "Row count in raw.customers",
+            "minimum": 0.0,
+            "title": "Raw Customers",
+            "type": "integer"
+          },
+          "raw_orders": {
+            "description": "Row count in raw.orders",
+            "minimum": 0.0,
+            "title": "Raw Orders",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "raw_orders",
+          "raw_customers",
+          "mart_customer_metrics",
+          "mart_fact_orders",
+          "mart_marketing_funnel",
+          "ml_rfm_segments",
+          "ml_churn_predictions"
+        ],
+        "title": "TableCountMetrics",
         "type": "object"
       },
       "TokenRequest": {
@@ -4751,6 +5058,36 @@
           }
         ],
         "summary": "API system health check",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/health/pipeline": {
+      "get": {
+        "description": "Evaluate end-to-end data pipeline freshness, table counts across schemas,\nML model artifact status, and operational anomalies.",
+        "operationId": "pipeline_health_api_health_pipeline_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PipelineHealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Data pipeline and ML model health check",
         "tags": [
           "Health"
         ]

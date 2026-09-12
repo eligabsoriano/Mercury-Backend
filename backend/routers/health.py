@@ -8,11 +8,14 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
 from backend.config import get_settings
-from backend.database import check_db_connection
+from backend.database import check_db_connection, get_db
 from backend.schemas.common import HealthResponse
+from backend.schemas.pipeline import PipelineHealthResponse
+from backend.services.pipeline_service import pipeline_service
 
 router = APIRouter(tags=["Health"])
 settings = get_settings()
@@ -34,3 +37,16 @@ def health_check() -> HealthResponse:
         database=db_status,
         timestamp=datetime.now(timezone.utc).isoformat(),
     )
+
+
+@router.get(
+    "/api/health/pipeline",
+    response_model=PipelineHealthResponse,
+    summary="Data pipeline and ML model health check",
+)
+def pipeline_health(db: Session = Depends(get_db)) -> PipelineHealthResponse:
+    """
+    Evaluate end-to-end data pipeline freshness, table counts across schemas,
+    ML model artifact status, and operational anomalies.
+    """
+    return pipeline_service.get_pipeline_health(db)
