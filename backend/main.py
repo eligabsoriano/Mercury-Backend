@@ -22,6 +22,7 @@ from backend.routers import (
     auth_router,
     customers_router,
     health_router,
+    marketing_router,
     predictions_router,
     products_router,
     retention_router,
@@ -92,6 +93,10 @@ app = FastAPI(
             "description": "Prescriptive playbooks, campaign financial simulations, and Knapsack budget optimization.",
         },
         {
+            "name": "Marketing",
+            "description": "Seller acquisition marketing funnel, sales cycle velocity, and origin channel attribution.",
+        },
+        {
             "name": "Health",
             "description": "System health and database connectivity diagnostics.",
         },
@@ -117,6 +122,7 @@ app.include_router(analytics_router)
 app.include_router(customers_router)
 app.include_router(predictions_router)
 app.include_router(retention_router)
+app.include_router(marketing_router)
 app.include_router(products_router)
 app.include_router(sellers_router)
 
@@ -155,6 +161,11 @@ def root_index() -> JSONResponse:
                 "retention_playbooks": "/api/retention/playbooks",
                 "campaign_simulate_roi": "/api/retention/campaigns/simulate-roi",
                 "campaign_optimize_budget": "/api/retention/campaigns/optimize-budget",
+                "marketing_overview": "/api/marketing/overview",
+                "marketing_channels": "/api/marketing/channels",
+                "marketing_velocity": "/api/marketing/velocity",
+                "marketing_segments": "/api/marketing/segments",
+                "marketing_leads": "/api/marketing/leads",
             },
         }
     )

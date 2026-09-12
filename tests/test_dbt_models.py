@@ -24,6 +24,8 @@ EXPECTED_STAGING_VIEWS = {
     "staging.stg_order_reviews",
     "staging.stg_products",
     "staging.stg_sellers",
+    "staging.stg_marketing_leads",
+    "staging.stg_closed_deals",
 }
 
 
@@ -151,6 +153,7 @@ def test_mart_tables_exist(db_conn):
         "dim_customers",
         "fact_orders",
         "mart_customer_metrics",
+        "mart_marketing_funnel",
     }
     with db_conn.cursor() as cur:
         cur.execute(

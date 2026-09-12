@@ -377,9 +377,18 @@ graph TD
 
 ---
 
-### Phase 10: Two-Sided Marketplace Marketing Funnel & Attribution Marts (Planned)
-- **10.1 Multi-Schema dbt Transformation**: Transform dormant `raw_marketing.mql` and `raw_marketing.closed_deals` into `staging.stg_marketing_leads`, `staging.stg_closed_deals`, and `mart.mart_marketing_funnel`.
-- **10.2 Channel Attribution & Velocity API**: Expose seller acquisition velocity, origin attribution (Organic, Paid Search, Social), and declared revenue conversion rates via `/api/marketing/*`.
+### Phase 10: Two-Sided Marketplace Marketing Funnel & Attribution Marts (✅ Complete)
+- **10.1 Multi-Schema dbt Transformation (`stg_marketing_leads`, `stg_closed_deals`, `mart_marketing_funnel`)**:
+  - Ingested and transformed dormant seller acquisition funnel data from `raw_marketing` schema.
+  - Standardized MQL channels, closed won dates, sales cycle durations (`days_to_close`), and linked converted sellers with realized marketplace orders and GMV.
+- **10.2 Channel Attribution & Conversion Scoring (`GET /api/marketing/channels`)**:
+  - Origin-level funnel analytics comparing lead volume, won deals, conversion efficiency, and revenue attribution across Organic Search, Paid Search, Social, Direct Traffic, and Referral.
+- **10.3 Sales Velocity Analytics (`GET /api/marketing/velocity`)**:
+  - Analyzes sales cycle duration across business segments and lead types, revealing fastest and slowest closing categories.
+- **10.4 Business Segment Economic Performance (`GET /api/marketing/segments`)**:
+  - Compares self-declared monthly seller revenue expectations against realized marketplace GMV and active seller activation rates.
+- **10.5 Lead Search & Exploration Directory (`GET /api/marketing/leads`)**:
+  - High-performance paginated lead explorer supporting multi-faceted filters on origin, won status, and business category.
 
 ---
 
@@ -393,14 +402,14 @@ graph TD
 
 | Metric | Target | Status | Verification Method |
 |:---|:---:|:---:|:---|
-| **CI Suite Pass Rate (Offline / No DB)** | 100% pass | ✅ 142 passed / 0 failures | `pytest tests/ -v` |
-| **Full Live Test Suite (With Neon DB)** | 180/180 tests | ✅ Ready | `pytest tests/ -v` with `DATABASE_URL` configured |
+| **CI Suite Pass Rate (Offline / No DB)** | 100% pass | ✅ 154 passed / 0 failures | `pytest tests/ -v` |
+| **Full Live Test Suite (With Neon DB)** | 192/192 tests | ✅ Ready | `pytest tests/ -v` with `DATABASE_URL` configured |
 | **API Response Latency (Cached)** | < 30ms | ✅ Passed | `curl -w "%{time_total}\n"` on `/api/analytics/overview` |
-| **API Response Latency (Mart Query)** | < 100ms | ✅ Passed | Paginated queries on `/api/customers`, `/api/products`, `/api/sellers` |
+| **API Response Latency (Mart Query)** | < 100ms | ✅ Passed | Paginated queries on `/api/customers`, `/api/products`, `/api/sellers`, `/api/marketing/leads` |
 | **Real-Time Inference Latency** | < 50ms | ✅ Passed (<25ms) | `POST /api/predictions/churn` benchmark |
 | **Prescriptive Retention Simulation** | < 15ms | ✅ Passed (<5ms) | `POST /api/retention/campaigns/simulate-roi` benchmark |
 | **Container Build** | Clean build, < 250MB | ✅ Passed | Multi-stage Dockerfile verified |
-| **OpenAPI Compliance** | 100% compliant (34 endpoints) | ✅ Passed | `python scripts/export_openapi.py` validation |
+| **OpenAPI Compliance** | 100% compliant (39 endpoints) | ✅ Passed | `python scripts/export_openapi.py` validation |
 | **Code Formatting & Linting** | 0 warnings, 0 errors | ✅ Passed | `ruff check` and `ruff format --check` |
 
 ---
@@ -411,7 +420,7 @@ graph TD
 |:---|:---|:---:|:---:|:---|
 | **Phase 8: Real-Time Inference & Simulation** | MLOps / API | 🔴 High | ✅ Complete | Transforms batch ML into real-time interactive decision-making and what-if simulation. |
 | **Phase 9: Prescriptive Retention Economics** | Analytics / Finance | 🔴 High | ✅ Complete | Solves the financial ROI dilemma and capital-efficient allocation for retention campaigns. |
-| **Phase 10: Marketplace Marketing Funnel** | Data Engineering | 🟡 Medium | ⏳ Planned | Activates dark marketing funnel data for complete two-sided marketplace intelligence. |
+| **Phase 10: Marketplace Marketing Funnel** | Data Engineering | 🟡 Medium | ✅ Complete | Activates dark marketing funnel data for complete two-sided marketplace intelligence. |
 | **Phase 11: Production Pipeline Orchestrator** | DevOps / Data Eng | 🟡 Medium | ⏳ Planned | Automates end-to-end data pipeline execution and health monitoring. |
 
 ---
@@ -426,7 +435,7 @@ graph TD
 - **Phase 7: Test Isolation, CI Hardening & Mart Optimization** — ✅ 100% Complete & Verified
 - **Phase 8: Real-Time ML Inference & Counterfactual Simulation** — ✅ 100% Complete & Verified
 - **Phase 9: Prescriptive Retention Economics & Campaign ROI** — ✅ 100% Complete & Verified
-- **Phase 10: Two-Sided Marketplace Marketing Funnel** — ⏳ Planned
+- **Phase 10: Two-Sided Marketplace Marketing Funnel** — ✅ 100% Complete & Verified
 - **Phase 11: Production Pipeline Orchestrator & Observability** — ⏳ Planned
 
 

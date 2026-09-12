@@ -103,3 +103,23 @@ models:
         description: Total merchandise revenue generated in BRL.
         tests: [not_null]
 
+  - name: mart_marketing_funnel
+    description: >
+      Marketing funnel analytical mart table combining marketing qualified leads (MQL),
+      conversion outcomes, sales velocity (days to close), declared seller characteristics,
+      and realized marketplace performance (orders and GMV).
+    columns:
+      - name: mql_id
+        description: Primary key. Unique marketing qualified lead identifier.
+        tests: [unique, not_null]
+      - name: origin
+        description: Lead acquisition channel origin.
+        tests: [not_null]
+      - name: is_won
+        description: Boolean indicating whether lead converted to a closed deal.
+        tests: [not_null]
+      - name: is_active_marketplace_seller
+        description: Boolean indicating whether seller has fulfilled at least 1 order on marketplace.
+        tests: [not_null]
+
+

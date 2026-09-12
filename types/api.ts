@@ -384,6 +384,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/marketing/channels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Origin Channel Attribution
+         * @description Retrieve marketing qualified lead volume, conversion rates, sales cycle duration, and revenue contribution broken down by lead acquisition channel (Organic, Paid Search, Social, etc.).
+         */
+        get: operations["get_channel_attribution_api_marketing_channels_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketing/leads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Browse Marketing Leads
+         * @description Search and browse marketing qualified leads (MQL) with multi-faceted filtering by origin channel, deal won status, and business category segment.
+         */
+        get: operations["list_marketing_leads_api_marketing_leads_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketing/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Marketing Funnel Overview
+         * @description Retrieve high-level seller acquisition marketing funnel performance KPIs, including total MQL volume, closed deals won, overall conversion rate, sales velocity, declared seller revenue, and realized marketplace GMV.
+         */
+        get: operations["get_funnel_overview_api_marketing_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketing/segments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Business Segment Economic Performance
+         * @description Examine marketplace seller performance by business category segment, comparing self-declared monthly revenue expectations against actual realized marketplace GMV and active seller counts.
+         */
+        get: operations["get_segment_performance_api_marketing_segments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketing/velocity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Seller Acquisition Sales Velocity
+         * @description Analyze sales cycle duration (days elapsed from initial MQL contact to won closed deal) across business segments and lead types, highlighting the fastest and slowest segments.
+         */
+        get: operations["get_sales_velocity_api_marketing_velocity_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/predictions/churn": {
         parameters: {
             query?: never;
@@ -950,6 +1050,68 @@ export interface components {
              * @description Total units sold in category
              */
             total_units_sold: number;
+        };
+        /**
+         * ChannelAttribution
+         * @description Acquisition origin channel conversion and revenue attribution scorecard.
+         */
+        ChannelAttribution: {
+            /**
+             * Avg Days To Close
+             * @description Average sales velocity in days for this channel
+             */
+            avg_days_to_close: number;
+            /**
+             * Closed Deals Count
+             * @description Number of won deals from this channel
+             */
+            closed_deals_count: number;
+            /**
+             * Conversion Rate
+             * @description Conversion rate percentage for this channel
+             */
+            conversion_rate: number;
+            /**
+             * Leads Count
+             * @description Number of MQLs acquired through this channel
+             */
+            leads_count: number;
+            /**
+             * Origin
+             * @description Acquisition origin channel (e.g. organic_search, paid_search)
+             */
+            origin: string;
+            /**
+             * Share Of Leads Percent
+             * @description Channel share of total lead volume percentage
+             */
+            share_of_leads_percent: number;
+            /**
+             * Total Actual Marketplace Revenue
+             * @description Realized marketplace GMV attributed to this channel (BRL)
+             */
+            total_actual_marketplace_revenue: number;
+            /**
+             * Total Declared Monthly Revenue
+             * @description Declared monthly revenue attributed to this channel (BRL)
+             */
+            total_declared_monthly_revenue: number;
+        };
+        /**
+         * ChannelAttributionResponse
+         * @description List of all acquisition origin channels ranked by conversion or volume.
+         */
+        ChannelAttributionResponse: {
+            /**
+             * Channels
+             * @description Origin channel attribution breakdowns
+             */
+            channels: components["schemas"]["ChannelAttribution"][];
+            /**
+             * Total Channels
+             * @description Total distinct channels identified
+             */
+            total_channels: number;
         };
         /**
          * ChurnPrediction
@@ -1687,6 +1849,136 @@ export interface components {
             version: string;
         };
         /**
+         * MarketingFunnelOverview
+         * @description Macro-level seller acquisition marketing funnel performance indicators.
+         */
+        MarketingFunnelOverview: {
+            /**
+             * Active Marketplace Sellers Count
+             * @description Count of converted sellers who actively fulfilled marketplace orders
+             */
+            active_marketplace_sellers_count: number;
+            /**
+             * Avg Days To Close
+             * @description Average sales cycle velocity from first contact to deal won in days
+             */
+            avg_days_to_close: number;
+            /**
+             * Overall Conversion Rate
+             * @description Funnel conversion efficiency percentage (closed_deals / total_leads * 100)
+             */
+            overall_conversion_rate: number;
+            /**
+             * Seller Activation Rate
+             * @description Percentage of won deals that became active revenue-generating sellers
+             */
+            seller_activation_rate: number;
+            /**
+             * Total Actual Marketplace Revenue
+             * @description Aggregate actual realized marketplace GMV from converted sellers (BRL)
+             */
+            total_actual_marketplace_revenue: number;
+            /**
+             * Total Closed Deals
+             * @description Total converted deals won
+             */
+            total_closed_deals: number;
+            /**
+             * Total Declared Monthly Revenue
+             * @description Aggregate self-declared monthly revenue of converted sellers (BRL)
+             */
+            total_declared_monthly_revenue: number;
+            /**
+             * Total Leads
+             * @description Total marketing qualified leads (MQL) acquired
+             */
+            total_leads: number;
+        };
+        /**
+         * MarketingLeadSummary
+         * @description Individual marketing qualified lead record.
+         */
+        MarketingLeadSummary: {
+            /**
+             * Actual Marketplace Revenue
+             * @description Actual realized marketplace revenue (BRL)
+             */
+            actual_marketplace_revenue?: number | null;
+            /**
+             * Business Segment
+             * @description Segment classification
+             */
+            business_segment?: string | null;
+            /**
+             * Days To Close
+             * @description Duration from lead to close in days
+             */
+            days_to_close?: number | null;
+            /**
+             * Declared Monthly Revenue
+             * @description Self-declared monthly revenue (BRL)
+             */
+            declared_monthly_revenue?: number | null;
+            /**
+             * First Contact Date
+             * @description Initial contact date
+             */
+            first_contact_date?: string | null;
+            /**
+             * Is Active Marketplace Seller
+             * @description True if seller generated actual marketplace transactions
+             */
+            is_active_marketplace_seller: boolean;
+            /**
+             * Is Won
+             * @description Whether deal was won
+             */
+            is_won: boolean;
+            /**
+             * Landing Page Id
+             * @description Landing page identifier
+             */
+            landing_page_id?: string | null;
+            /**
+             * Lead Type
+             * @description Lead category type
+             */
+            lead_type?: string | null;
+            /**
+             * Mql Id
+             * @description Marketing qualified lead identifier
+             */
+            mql_id: string;
+            /**
+             * Origin
+             * @description Acquisition origin channel
+             */
+            origin: string;
+            /**
+             * Seller Id
+             * @description Matched seller identifier, if won
+             */
+            seller_id?: string | null;
+            /**
+             * Won Date
+             * @description Date deal closed, if won
+             */
+            won_date?: string | null;
+        };
+        /**
+         * MarketingLeadsListResponse
+         * @description Paginated collection of marketing qualified leads.
+         */
+        MarketingLeadsListResponse: {
+            /**
+             * Items
+             * @description Marketing lead records
+             */
+            items: components["schemas"]["MarketingLeadSummary"][];
+            /** @description Pagination metadata */
+            pagination: components["schemas"]["PaginationMeta"];
+        };
+        /**
          * ModelMetadataResponse
          * @description Metadata, feature schema, and evaluation metrics for the active serving model.
          */
@@ -2254,6 +2546,37 @@ export interface components {
             total_revenue_at_risk: number;
         };
         /**
+         * SalesVelocityMetrics
+         * @description Comprehensive sales velocity indicators across segments and lead types.
+         */
+        SalesVelocityMetrics: {
+            /**
+             * Fastest Segment
+             * @description Segment with the shortest average days to close
+             */
+            fastest_segment?: string | null;
+            /**
+             * Overall Avg Days To Close
+             * @description Global average sales cycle duration across all won deals
+             */
+            overall_avg_days_to_close: number;
+            /**
+             * Slowest Segment
+             * @description Segment with the longest average days to close
+             */
+            slowest_segment?: string | null;
+            /**
+             * Velocity By Lead Type
+             * @description Velocity breakdowns per lead type
+             */
+            velocity_by_lead_type: components["schemas"]["VelocityByLeadType"][];
+            /**
+             * Velocity By Segment
+             * @description Velocity breakdowns per business segment
+             */
+            velocity_by_segment: components["schemas"]["VelocityBySegment"][];
+        };
+        /**
          * SegmentDistribution
          * @description Aggregate portfolio summary for a specific RFM customer segment.
          */
@@ -2293,6 +2616,58 @@ export interface components {
              * @description Total lifetime spend generated by this segment in BRL
              */
             total_spend: number;
+        };
+        /**
+         * SegmentPerformance
+         * @description Marketplace seller category segment economic performance.
+         */
+        SegmentPerformance: {
+            /**
+             * Active Sellers Count
+             * @description Count of sellers in this segment actively fulfilling orders
+             */
+            active_sellers_count: number;
+            /**
+             * Avg Declared Monthly Revenue
+             * @description Average declared monthly revenue per seller (BRL)
+             */
+            avg_declared_monthly_revenue: number;
+            /**
+             * Business Segment
+             * @description Business category segment
+             */
+            business_segment: string;
+            /**
+             * Closed Deals Count
+             * @description Number of won deals in this segment
+             */
+            closed_deals_count: number;
+            /**
+             * Total Actual Marketplace Revenue
+             * @description Total realized marketplace GMV from this segment (BRL)
+             */
+            total_actual_marketplace_revenue: number;
+            /**
+             * Total Declared Monthly Revenue
+             * @description Total self-declared monthly revenue (BRL)
+             */
+            total_declared_monthly_revenue: number;
+        };
+        /**
+         * SegmentPerformanceResponse
+         * @description Overview of business segments ordered by volume or revenue.
+         */
+        SegmentPerformanceResponse: {
+            /**
+             * Segments
+             * @description Segment performance summaries
+             */
+            segments: components["schemas"]["SegmentPerformance"][];
+            /**
+             * Total Segments
+             * @description Total distinct business segments
+             */
+            total_segments: number;
         };
         /**
          * SegmentsOverview
@@ -2557,6 +2932,58 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /**
+         * VelocityByLeadType
+         * @description Sales cycle velocity metrics aggregated by lead type.
+         */
+        VelocityByLeadType: {
+            /**
+             * Avg Days To Close
+             * @description Mean days to close for this lead type
+             */
+            avg_days_to_close: number;
+            /**
+             * Closed Deals Count
+             * @description Total deals closed of this lead type
+             */
+            closed_deals_count: number;
+            /**
+             * Lead Type
+             * @description Lead classification (e.g. online, offline, industry)
+             */
+            lead_type: string;
+        };
+        /**
+         * VelocityBySegment
+         * @description Sales cycle velocity metrics aggregated by business segment.
+         */
+        VelocityBySegment: {
+            /**
+             * Avg Days To Close
+             * @description Mean days elapsed from MQL to closed deal
+             */
+            avg_days_to_close: number;
+            /**
+             * Business Segment
+             * @description Seller industry or catalog segment
+             */
+            business_segment: string;
+            /**
+             * Closed Deals Count
+             * @description Total deals closed in segment
+             */
+            closed_deals_count: number;
+            /**
+             * Max Days To Close
+             * @description Maximum days to close in segment
+             */
+            max_days_to_close: number;
+            /**
+             * Min Days To Close
+             * @description Minimum days to close in segment
+             */
+            min_days_to_close: number;
         };
     };
     responses: never;
@@ -3155,6 +3582,174 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    get_channel_attribution_api_marketing_channels_get: {
+        parameters: {
+            query?: {
+                /** @description Bypass in-memory cache and re-query the database */
+                bypass_cache?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelAttributionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_marketing_leads_api_marketing_leads_get: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page */
+                page_size?: number;
+                /** @description Filter by acquisition channel */
+                origin?: string | null;
+                /** @description Filter by won/lost status */
+                is_won?: boolean | null;
+                /** @description Filter by business category segment */
+                business_segment?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketingLeadsListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_funnel_overview_api_marketing_overview_get: {
+        parameters: {
+            query?: {
+                /** @description Bypass in-memory cache and re-query the database */
+                bypass_cache?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketingFunnelOverview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_segment_performance_api_marketing_segments_get: {
+        parameters: {
+            query?: {
+                /** @description Bypass in-memory cache and re-query the database */
+                bypass_cache?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SegmentPerformanceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_sales_velocity_api_marketing_velocity_get: {
+        parameters: {
+            query?: {
+                /** @description Bypass in-memory cache and re-query the database */
+                bypass_cache?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalesVelocityMetrics"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

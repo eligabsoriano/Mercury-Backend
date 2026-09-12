@@ -31,6 +31,18 @@ from backend.schemas.customer import (
     CustomerReviewMetrics,
     CustomerSummary,
 )
+from backend.schemas.marketing import (
+    ChannelAttribution,
+    ChannelAttributionResponse,
+    MarketingFunnelOverview,
+    MarketingLeadsListResponse,
+    MarketingLeadSummary,
+    SalesVelocityMetrics,
+    SegmentPerformance,
+    SegmentPerformanceResponse,
+    VelocityByLeadType,
+    VelocityBySegment,
+)
 from backend.schemas.prediction import (
     ChurnPredictionInput,
     ChurnPredictionResult,
@@ -88,4 +100,14 @@ __all__ = [
     "BudgetAllocationRequest",
     "BudgetAllocationResult",
     "CustomerPlaybookRecommendation",
+    "MarketingFunnelOverview",
+    "ChannelAttribution",
+    "ChannelAttributionResponse",
+    "VelocityBySegment",
+    "VelocityByLeadType",
+    "SalesVelocityMetrics",
+    "SegmentPerformance",
+    "SegmentPerformanceResponse",
+    "MarketingLeadSummary",
+    "MarketingLeadsListResponse",
 ]

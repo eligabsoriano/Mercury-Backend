@@ -108,7 +108,7 @@ The raw ingestion layer preserves source column names exactly.
 - **In-Memory Rate Limiting**: Sliding-window counter with monotonic timestamps returning HTTP 429 Too Many Requests and `Retry-After` header when requests exceed 120 req/min per IP.
 - **Request Tracing & Latency Headers**: Attaches unique `X-Request-ID` (UUID4) and `X-Process-Time` (in milliseconds) to all HTTP responses. Structured access logs emitted under `mercury.access`.
 
-## API Surface (backend/ — 34 Live Endpoints)
+## API Surface (backend/ — 39 Live Endpoints)
 
 | Category | Method & Path | Description |
 |:---|:---|:---|
@@ -141,6 +141,11 @@ The raw ingestion layer preserves source column names exactly.
 | **Retention** | `POST /api/retention/campaigns/simulate-roi` | Campaign financial simulation (gross savings, net value, ROI%, break-even) |
 | **Retention** | `POST /api/retention/campaigns/optimize-budget` | Knapsack capital deployment optimizer maximizing net revenue recovery |
 | **Retention** | `GET /api/retention/recommendations/{customer_unique_id}` | Individual churn friction diagnosis and optimal playbook recommendation |
+| **Marketing** | `GET /api/marketing/overview` | Seller acquisition marketing funnel overview and conversion rate |
+| **Marketing** | `GET /api/marketing/channels` | Origin channel attribution with lead share, velocity, and revenue |
+| **Marketing** | `GET /api/marketing/velocity` | Sales cycle duration (days to close) by segment and lead type |
+| **Marketing** | `GET /api/marketing/segments` | Business segment performance, declared revenue vs. actual GMV |
+| **Marketing** | `GET /api/marketing/leads` | Paginated marketing qualified lead directory with multi-filter search |
 | **Products** | `GET /api/products` | Paginated catalog search with category & rating filters |
 | **Products** | `GET /api/products/categories` | Product category breakdown with sales & review scores |
 | **Products** | `GET /api/products/{id}` | Product 360 scorecard with specs & revenue metrics |
@@ -152,7 +157,7 @@ The raw ingestion layer preserves source column names exactly.
 
 Client applications consume typed API contracts synchronized from the FastAPI OpenAPI 3.1 specification:
 - **OpenAPI 3.1 Spec**: [openapi.json](../openapi.json) (exported via `python scripts/export_openapi.py`).
-- **TypeScript Interface Definitions**: [types/api.ts](../types/api.ts) (2,502 lines generated via `npm run codegen`).
+- **TypeScript Interface Definitions**: [types/api.ts](../types/api.ts) (4,237 lines generated via `npm run codegen`).
 
 ### Consumer Applications
 - **Web Application (`Mercury-Web`)**: Built with React, TypeScript, and Tailwind CSS. Features Executive Overview KPIs, Customer Intelligence Directory, Customer 360 Deep-Dive, and Action Workspace for retention list export (`GET /api/customers/export`).
@@ -190,18 +195,18 @@ mercury/
 │   ├── security.py           ← Dual API Key & HMAC-SHA256 JWT auth dependencies
 │   ├── routers/              ← Modular REST route handlers
 │   ├── schemas/              ← Pydantic v2 validation models
-│   └── services/             ← Business query services (Analytics, Customer, Seller, Product, Prediction, Retention)
+│   └── services/             ← Business query services (Analytics, Customer, Seller, Product, Prediction, Retention, Marketing)
 ├── dbt/
 │   └── mercury_analytics/    ← dbt transformation project
 │       ├── models/
-│       │   ├── staging/      ← 7 staging views + 53 data tests
+│       │   ├── staging/      ← 9 staging views + 57 data tests
 │       │   ├── intermediate/ ← 6 intermediate customer rollups
-│       │   └── marts/        ← 5 mart tables (mart_customer_metrics, dim_customers, fact_orders, mart_product_metrics, mart_seller_metrics)
+│       │   └── marts/        ← 6 mart tables (mart_customer_metrics, dim_customers, fact_orders, mart_product_metrics, mart_seller_metrics, mart_marketing_funnel)
 │       ├── macros/           ← Custom schema name generator macros
 │       └── dbt_project.yml
 ├── docs/                     ← System documentation
 │   ├── architecture.md       ← Full system flow, data models, and API surface
-│   ├── backend_roadmap.md    ← Engineering roadmap (Phases 1-11 with Phase 9 Prescriptive Retention active)
+│   ├── backend_roadmap.md    ← Engineering roadmap (Phases 1-11 with Phase 10 Marketing Funnel active)
 │   ├── business_case.md      ← Retention dilemma and SDG business justification
 │   ├── deployment.md         ← Docker, Docker Compose, and Cloud PaaS operations guide
 │   ├── methodology.md        ← RFM quintile scoring and ML churn methodology
@@ -212,9 +217,9 @@ mercury/
 ├── scripts/
 │   └── export_openapi.py     ← Static OpenAPI 3.1 schema exporter
 ├── sql/                      ← DDL schema, views, and migration runner
-├── tests/                    ← Comprehensive 180-test automated test suite (14 modules)
+├── tests/                    ← Comprehensive 192-test automated test suite (15 modules)
 ├── types/
-│   └── api.ts                ← Auto-generated TypeScript types (3,520 lines)
+│   └── api.ts                ← Auto-generated TypeScript types (4,237 lines)
 ├── .dockerignore
 ├── .env.example
 ├── .gitignore

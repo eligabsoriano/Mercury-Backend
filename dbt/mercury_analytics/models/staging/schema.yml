@@ -123,3 +123,27 @@ models:
         description: Lowercase, trimmed city name.
       - name: state
         description: Uppercase 2-char state abbreviation.
+
+  - name: stg_marketing_leads
+    description: >
+      Lightly cleaned seller acquisition marketing qualified leads (8,000 rows).
+      Surfaces lead identifiers, acquisition origin channels, and first contact dates.
+    columns:
+      - name: mql_id
+        description: Primary key. Unique marketing qualified lead identifier.
+        tests: [unique, not_null]
+      - name: origin
+        description: Acquisition channel origin.
+        tests: [not_null]
+
+  - name: stg_closed_deals
+    description: >
+      Lightly cleaned converted seller acquisition deals (842 rows).
+      Surfaces won dates, sales representatives, business segments, and declared revenues.
+    columns:
+      - name: mql_id
+        description: Primary key. FK to stg_marketing_leads.
+        tests: [unique, not_null]
+      - name: seller_id
+        description: Converted seller identifier.
+

@@ -476,6 +476,36 @@ def _make_customer_list_rows(
     return rows
 
 
+def _make_marketing_lead_rows(
+    limit: int = 20,
+    origin: Optional[str] = None,
+    is_won: Optional[bool] = None,
+    business_segment: Optional[str] = None,
+) -> List[MockRow]:
+    rows: List[MockRow] = []
+    for i in range(1, limit + 1):
+        lead_origin = origin or ("organic_search" if i % 2 == 0 else "paid_search")
+        won = is_won if is_won is not None else (i % 3 == 0)
+        seg = business_segment or ("reseller" if i % 2 == 0 else "health_beauty")
+        row_dict = {
+            "mql_id": f"mql_test_id_{i:04d}",
+            "first_contact_date": f"2018-05-{(i % 28) + 1:02d}",
+            "landing_page_id": f"landing_page_{i:03d}",
+            "origin": lead_origin,
+            "is_won": won,
+            "won_date": f"2018-06-{(i % 28) + 1:02d}" if won else None,
+            "days_to_close": (i * 3) + 10 if won else None,
+            "seller_id": f"seller_test_{i:04d}" if won else None,
+            "business_segment": seg if won else None,
+            "lead_type": "online" if won else None,
+            "declared_monthly_revenue": float(i * 1000.0) if won else None,
+            "is_active_marketplace_seller": (won and i % 2 == 0),
+            "actual_marketplace_revenue": float(i * 1250.0) if (won and i % 2 == 0) else None,
+        }
+        rows.append(MockRow(row_dict))
+    return rows
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Mock SQLAlchemy Session Engine
 # ─────────────────────────────────────────────────────────────────────────────
@@ -833,6 +863,244 @@ class MockSession:
                     search=params.get("search"),
                     sort_by_recency_asc=is_recency_asc,
                     sort_by_rar_desc=is_rar_desc,
+                )
+            )
+
+        # ── 5. Marketing Funnel & Attribution ──────────────────────────────
+        if "FROM mart.mart_marketing_funnel" in sql:
+            # a. Overview query
+            if "total_leads" in sql and "seller_activation_rate" in sql:
+                row = MockRow(
+                    {
+                        "total_leads": 8000,
+                        "total_closed_deals": 842,
+                        "overall_conversion_rate": 10.53,
+                        "avg_days_to_close": 48.7,
+                        "total_declared_monthly_revenue": 6250000.0,
+                        "total_actual_marketplace_revenue": 1280000.0,
+                        "active_marketplace_sellers_count": 380,
+                        "seller_activation_rate": 45.13,
+                    }
+                )
+                return MockResult([row])
+
+            # b. Channel attribution
+            if "share_of_leads_percent" in sql:
+                rows = [
+                    MockRow(
+                        {
+                            "origin": "organic_search",
+                            "leads_count": 2296,
+                            "closed_deals_count": 271,
+                            "conversion_rate": 11.8,
+                            "avg_days_to_close": 46.2,
+                            "total_declared_monthly_revenue": 1950000.0,
+                            "total_actual_marketplace_revenue": 450000.0,
+                            "share_of_leads_percent": 28.7,
+                        }
+                    ),
+                    MockRow(
+                        {
+                            "origin": "paid_search",
+                            "leads_count": 1586,
+                            "closed_deals_count": 195,
+                            "conversion_rate": 12.3,
+                            "avg_days_to_close": 44.5,
+                            "total_declared_monthly_revenue": 1420000.0,
+                            "total_actual_marketplace_revenue": 320000.0,
+                            "share_of_leads_percent": 19.83,
+                        }
+                    ),
+                    MockRow(
+                        {
+                            "origin": "social",
+                            "leads_count": 1350,
+                            "closed_deals_count": 120,
+                            "conversion_rate": 8.89,
+                            "avg_days_to_close": 52.1,
+                            "total_declared_monthly_revenue": 890000.0,
+                            "total_actual_marketplace_revenue": 180000.0,
+                            "share_of_leads_percent": 16.88,
+                        }
+                    ),
+                    MockRow(
+                        {
+                            "origin": "direct_traffic",
+                            "leads_count": 499,
+                            "closed_deals_count": 56,
+                            "conversion_rate": 11.22,
+                            "avg_days_to_close": 49.0,
+                            "total_declared_monthly_revenue": 410000.0,
+                            "total_actual_marketplace_revenue": 95000.0,
+                            "share_of_leads_percent": 6.24,
+                        }
+                    ),
+                    MockRow(
+                        {
+                            "origin": "email",
+                            "leads_count": 493,
+                            "closed_deals_count": 31,
+                            "conversion_rate": 6.29,
+                            "avg_days_to_close": 55.4,
+                            "total_declared_monthly_revenue": 250000.0,
+                            "total_actual_marketplace_revenue": 52000.0,
+                            "share_of_leads_percent": 6.16,
+                        }
+                    ),
+                    MockRow(
+                        {
+                            "origin": "referral",
+                            "leads_count": 284,
+                            "closed_deals_count": 24,
+                            "conversion_rate": 8.45,
+                            "avg_days_to_close": 41.8,
+                            "total_declared_monthly_revenue": 180000.0,
+                            "total_actual_marketplace_revenue": 45000.0,
+                            "share_of_leads_percent": 3.55,
+                        }
+                    ),
+                    MockRow(
+                        {
+                            "origin": "other",
+                            "leads_count": 1492,
+                            "closed_deals_count": 145,
+                            "conversion_rate": 9.72,
+                            "avg_days_to_close": 50.3,
+                            "total_declared_monthly_revenue": 1150000.0,
+                            "total_actual_marketplace_revenue": 138000.0,
+                            "share_of_leads_percent": 18.65,
+                        }
+                    ),
+                ]
+                return MockResult(rows)
+
+            # c. Global average velocity
+            if "SELECT ROUND(COALESCE(AVG(days_to_close)" in sql:
+                return MockResult([], scalar_val=48.7)
+
+            # d. Velocity by segment
+            if "min_days_to_close" in sql and "max_days_to_close" in sql:
+                rows = [
+                    MockRow(
+                        {
+                            "business_segment": "reseller",
+                            "closed_deals_count": 180,
+                            "avg_days_to_close": 32.4,
+                            "min_days_to_close": 2,
+                            "max_days_to_close": 120,
+                        }
+                    ),
+                    MockRow(
+                        {
+                            "business_segment": "car_accessories",
+                            "closed_deals_count": 75,
+                            "avg_days_to_close": 41.2,
+                            "min_days_to_close": 5,
+                            "max_days_to_close": 145,
+                        }
+                    ),
+                    MockRow(
+                        {
+                            "business_segment": "audio_video_electronics",
+                            "closed_deals_count": 64,
+                            "avg_days_to_close": 47.8,
+                            "min_days_to_close": 4,
+                            "max_days_to_close": 160,
+                        }
+                    ),
+                    MockRow(
+                        {
+                            "business_segment": "health_beauty",
+                            "closed_deals_count": 92,
+                            "avg_days_to_close": 54.1,
+                            "min_days_to_close": 6,
+                            "max_days_to_close": 180,
+                        }
+                    ),
+                ]
+                return MockResult(rows)
+
+            # e. Velocity by lead_type
+            if "lead_type" in sql and "WHERE is_won IS TRUE AND lead_type IS NOT NULL" in sql:
+                rows = [
+                    MockRow(
+                        {
+                            "lead_type": "online",
+                            "closed_deals_count": 420,
+                            "avg_days_to_close": 42.1,
+                        }
+                    ),
+                    MockRow(
+                        {
+                            "lead_type": "offline",
+                            "closed_deals_count": 210,
+                            "avg_days_to_close": 53.6,
+                        }
+                    ),
+                    MockRow(
+                        {
+                            "lead_type": "industry",
+                            "closed_deals_count": 120,
+                            "avg_days_to_close": 58.2,
+                        }
+                    ),
+                ]
+                return MockResult(rows)
+
+            # f. Segment performance
+            if "active_sellers_count" in sql:
+                rows = [
+                    MockRow(
+                        {
+                            "business_segment": "reseller",
+                            "closed_deals_count": 180,
+                            "total_declared_monthly_revenue": 1800000.0,
+                            "avg_declared_monthly_revenue": 10000.0,
+                            "total_actual_marketplace_revenue": 450000.0,
+                            "active_sellers_count": 95,
+                        }
+                    ),
+                    MockRow(
+                        {
+                            "business_segment": "health_beauty",
+                            "closed_deals_count": 92,
+                            "total_declared_monthly_revenue": 950000.0,
+                            "avg_declared_monthly_revenue": 10326.09,
+                            "total_actual_marketplace_revenue": 280000.0,
+                            "active_sellers_count": 48,
+                        }
+                    ),
+                    MockRow(
+                        {
+                            "business_segment": "car_accessories",
+                            "closed_deals_count": 75,
+                            "total_declared_monthly_revenue": 720000.0,
+                            "avg_declared_monthly_revenue": 9600.0,
+                            "total_actual_marketplace_revenue": 210000.0,
+                            "active_sellers_count": 38,
+                        }
+                    ),
+                ]
+                return MockResult(rows)
+
+            # g. Lead count query
+            if "SELECT COUNT(*)" in sql:
+                if (
+                    params.get("origin")
+                    or params.get("is_won") is not None
+                    or params.get("business_segment")
+                ):
+                    return MockResult([], scalar_val=15)
+                return MockResult([], scalar_val=8000)
+
+            # h. Leads listing query
+            limit = int(params.get("limit", 20))
+            return MockResult(
+                _make_marketing_lead_rows(
+                    limit=limit,
+                    origin=params.get("origin"),
+                    is_won=params.get("is_won"),
+                    business_segment=params.get("business_segment"),
                 )
             )
 
