@@ -61,7 +61,7 @@ class SellerService:
         where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
 
         # Count total matching sellers
-        count_query = text(f"SELECT COUNT(*) FROM staging.stg_sellers s {where_sql}")
+        count_query = text(f"SELECT COUNT(*) FROM mart.mart_seller_metrics s {where_sql}")
         total_items = db.execute(count_query, params).scalar() or 0
 
         sort_col = SellerService._ALLOWED_SORT_COLUMNS.get(sort_by, "total_revenue")
@@ -75,20 +75,16 @@ class SellerService:
                 s.city,
                 s.state,
                 s.zip_prefix,
-                COUNT(DISTINCT oi.order_id) AS total_orders_fulfilled,
-                COUNT(oi.order_item_id) AS total_items_sold,
-                COUNT(DISTINCT oi.product_id) AS total_unique_products,
-                ROUND(COALESCE(SUM(oi.item_revenue), 0.0)::numeric, 2) AS total_revenue,
-                ROUND(COALESCE(AVG(oi.item_revenue), 0.0)::numeric, 2) AS avg_item_value,
-                ROUND(COALESCE(AVG(o.delivery_delay_days), 0.0)::numeric, 1) AS avg_delivery_delay_days,
-                ROUND(COALESCE(AVG(CASE WHEN o.delivery_delay_days > 0 THEN 1.0 ELSE 0.0 END), 0.0)::numeric * 100.0, 2) AS late_delivery_rate,
-                ROUND(COALESCE(AVG(r.review_score), 0.0)::numeric, 2) AS avg_review_score
-            FROM staging.stg_sellers s
-            JOIN staging.stg_order_items oi ON s.seller_id = oi.seller_id
-            JOIN staging.stg_orders o ON oi.order_id = o.order_id
-            LEFT JOIN staging.stg_order_reviews r ON o.order_id = r.order_id
+                s.total_orders_fulfilled,
+                s.total_items_sold,
+                s.total_unique_products,
+                s.total_revenue,
+                s.avg_item_value,
+                s.avg_delivery_delay_days,
+                s.late_delivery_rate,
+                s.avg_review_score
+            FROM mart.mart_seller_metrics s
             {where_sql}
-            GROUP BY s.seller_id, s.city, s.state, s.zip_prefix
             ORDER BY {sort_col} {sort_dir} NULLS LAST
             LIMIT :limit OFFSET :offset
             """
@@ -146,21 +142,17 @@ class SellerService:
                 s.city,
                 s.state,
                 s.zip_prefix,
-                COUNT(DISTINCT oi.order_id) AS total_orders_fulfilled,
-                COUNT(oi.order_item_id) AS total_items_sold,
-                COUNT(DISTINCT oi.product_id) AS total_unique_products,
-                ROUND(COALESCE(SUM(oi.item_revenue), 0.0)::numeric, 2) AS total_revenue,
-                ROUND(COALESCE(AVG(oi.item_revenue), 0.0)::numeric, 2) AS avg_item_value,
-                ROUND(COALESCE(AVG(o.delivery_delay_days), 0.0)::numeric, 1) AS avg_delivery_delay_days,
-                ROUND(COALESCE(AVG(CASE WHEN o.delivery_delay_days > 0 THEN 1.0 ELSE 0.0 END), 0.0)::numeric * 100.0, 2) AS late_delivery_rate,
-                ROUND(COALESCE(AVG(r.review_score), 0.0)::numeric, 2) AS avg_review_score,
-                ROUND(COALESCE(AVG(CASE WHEN r.review_score >= 4 THEN 1.0 ELSE 0.0 END), 0.0)::numeric * 100.0, 2) AS positive_reviews_rate
-            FROM staging.stg_sellers s
-            LEFT JOIN staging.stg_order_items oi ON s.seller_id = oi.seller_id
-            LEFT JOIN staging.stg_orders o ON oi.order_id = o.order_id
-            LEFT JOIN staging.stg_order_reviews r ON o.order_id = r.order_id
+                s.total_orders_fulfilled,
+                s.total_items_sold,
+                s.total_unique_products,
+                s.total_revenue,
+                s.avg_item_value,
+                s.avg_delivery_delay_days,
+                s.late_delivery_rate,
+                s.avg_review_score,
+                s.positive_reviews_rate
+            FROM mart.mart_seller_metrics s
             WHERE s.seller_id = :seller_id
-            GROUP BY s.seller_id, s.city, s.state, s.zip_prefix
             """
         )
         row = db.execute(query, {"seller_id": seller_id}).mappings().first()

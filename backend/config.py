@@ -30,7 +30,7 @@ class Settings:
             "Customer intelligence, RFM segmentation, churn prediction, "
             "and revenue-at-risk retention analytics platform.",
         )
-        self.env: str = os.getenv("ENV", "development").lower()
+        self.env: str = (os.getenv("ENV") or os.getenv("APP_ENV") or "development").lower()
         self.host: str = os.getenv("HOST", "0.0.0.0")
         self.port: int = int(os.getenv("PORT", "8000"))
 

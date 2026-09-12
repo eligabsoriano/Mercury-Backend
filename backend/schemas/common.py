@@ -7,11 +7,9 @@ Common reusable Pydantic schemas for pagination, health checks, and metadata.
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, Generic, List, TypeVar
+from typing import Any, Dict
 
 from pydantic import BaseModel, ConfigDict, Field
-
-T = TypeVar("T")
 
 
 class PaginationMeta(BaseModel):
@@ -37,15 +35,6 @@ class PaginationMeta(BaseModel):
             has_next=page < total_pages,
             has_prev=page > 1,
         )
-
-
-class PaginatedResponse(BaseModel, Generic[T]):
-    """Generic envelope for paginated resource lists."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    items: List[T] = Field(..., description="List of items for the current page")
-    pagination: PaginationMeta = Field(..., description="Pagination metadata")
 
 
 class HealthResponse(BaseModel):

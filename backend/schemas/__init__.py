@@ -21,7 +21,6 @@ from backend.schemas.churn import (
 )
 from backend.schemas.common import (
     HealthResponse,
-    PaginatedResponse,
     PaginationMeta,
 )
 from backend.schemas.customer import (
@@ -39,7 +38,6 @@ from backend.schemas.rfm import (
 
 __all__ = [
     "PaginationMeta",
-    "PaginatedResponse",
     "HealthResponse",
     "RFMScorecard",
     "SegmentDistribution",

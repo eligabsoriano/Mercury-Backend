@@ -126,6 +126,7 @@ The raw ingestion layer preserves source column names exactly.
 | **Customers** | `GET /api/customers` | Paginated customer listings with multi-attribute filtering |
 | **Customers** | `GET /api/customers/at-risk` | Actionable retention queue sorted by RAR descending |
 | **Customers** | `GET /api/customers/export` | Streaming CSV download with retention action playbooks |
+| **Customers** | `GET /api/customers/segments` | RFM customer segmentation summary convenience alias |
 | **Customers** | `GET /api/customers/{id}` | Customer 360 profile (orders, friction, RFM, churn) |
 | **Customers** | `GET /api/customers/{id}/rfm` | Individual customer RFM scorecard |
 | **Customers** | `GET /api/customers/{id}/churn` | Individual churn probability & risk tier scorecard |

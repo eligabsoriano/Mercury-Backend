@@ -105,11 +105,11 @@ def test_rate_limiting_middleware_returns_429() -> None:
     # Temporarily set limit to 3 for testing
     with patch.object(settings, "rate_limit_requests_per_minute", 3):
         for _ in range(3):
-            res = client.get("/api/customers?page=1&page_size=1", headers=ip_headers)
+            res = client.get("/api/analytics/cache/stats", headers=ip_headers)
             assert res.status_code == 200
 
         # 4th request should be throttled
-        throttled_res = client.get("/api/customers?page=1&page_size=1", headers=ip_headers)
+        throttled_res = client.get("/api/analytics/cache/stats", headers=ip_headers)
         assert throttled_res.status_code == 429
         data = throttled_res.json()
         assert "Rate limit exceeded" in data["detail"]

@@ -67,7 +67,7 @@ class ProductService:
 
         where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
 
-        count_query = text(f"SELECT COUNT(*) FROM staging.stg_products p {where_sql}")
+        count_query = text(f"SELECT COUNT(*) FROM mart.mart_product_metrics p {where_sql}")
         total_items = db.execute(count_query, params).scalar() or 0
 
         sort_col = ProductService._ALLOWED_SORT_COLUMNS.get(sort_by, "total_revenue")
@@ -85,24 +85,13 @@ class ProductService:
                 p.product_height_cm,
                 p.product_width_cm,
                 p.product_photos_qty,
-                COUNT(oi.order_item_id) AS total_units_sold,
-                COUNT(DISTINCT oi.order_id) AS total_orders_count,
-                ROUND(COALESCE(SUM(oi.item_revenue), 0.0)::numeric, 2) AS total_revenue,
-                ROUND(COALESCE(AVG(oi.price), 0.0)::numeric, 2) AS avg_unit_price,
-                ROUND(COALESCE(AVG(r.review_score), 0.0)::numeric, 2) AS avg_review_score
-            FROM staging.stg_products p
-            LEFT JOIN staging.stg_order_items oi ON p.product_id = oi.product_id
-            LEFT JOIN staging.stg_order_reviews r ON oi.order_id = r.order_id
+                p.total_units_sold,
+                p.total_orders_count,
+                p.total_revenue,
+                p.avg_unit_price,
+                p.avg_review_score
+            FROM mart.mart_product_metrics p
             {where_sql}
-            GROUP BY
-                p.product_id,
-                p.category_name_pt,
-                p.category_name_en,
-                p.product_weight_g,
-                p.product_length_cm,
-                p.product_height_cm,
-                p.product_width_cm,
-                p.product_photos_qty
             ORDER BY {sort_col} {sort_dir} NULLS LAST
             LIMIT :limit OFFSET :offset
             """
@@ -165,13 +154,11 @@ class ProductService:
                 COALESCE(p.category_name_en, p.category_name_pt, 'uncategorized') AS category,
                 p.category_name_pt,
                 COUNT(DISTINCT p.product_id) AS total_products,
-                COUNT(oi.order_item_id) AS total_units_sold,
-                ROUND(COALESCE(SUM(oi.item_revenue), 0.0)::numeric, 2) AS total_revenue,
-                ROUND(COALESCE(AVG(oi.price), 0.0)::numeric, 2) AS avg_price,
-                ROUND(COALESCE(AVG(r.review_score), 0.0)::numeric, 2) AS avg_review_score
-            FROM staging.stg_products p
-            JOIN staging.stg_order_items oi ON p.product_id = oi.product_id
-            LEFT JOIN staging.stg_order_reviews r ON oi.order_id = r.order_id
+                COALESCE(SUM(p.total_units_sold), 0) AS total_units_sold,
+                ROUND(COALESCE(SUM(p.total_revenue), 0.0)::numeric, 2) AS total_revenue,
+                ROUND(COALESCE(AVG(p.avg_unit_price), 0.0)::numeric, 2) AS avg_price,
+                ROUND(COALESCE(AVG(p.avg_review_score), 0.0)::numeric, 2) AS avg_review_score
+            FROM mart.mart_product_metrics p
             GROUP BY 1, 2
             ORDER BY total_revenue DESC
             """
@@ -219,24 +206,13 @@ class ProductService:
                 p.product_height_cm,
                 p.product_width_cm,
                 p.product_photos_qty,
-                COUNT(oi.order_item_id) AS total_units_sold,
-                COUNT(DISTINCT oi.order_id) AS total_orders_count,
-                ROUND(COALESCE(SUM(oi.item_revenue), 0.0)::numeric, 2) AS total_revenue,
-                ROUND(COALESCE(AVG(oi.price), 0.0)::numeric, 2) AS avg_unit_price,
-                ROUND(COALESCE(AVG(r.review_score), 0.0)::numeric, 2) AS avg_review_score
-            FROM staging.stg_products p
-            LEFT JOIN staging.stg_order_items oi ON p.product_id = oi.product_id
-            LEFT JOIN staging.stg_order_reviews r ON oi.order_id = r.order_id
+                p.total_units_sold,
+                p.total_orders_count,
+                p.total_revenue,
+                p.avg_unit_price,
+                p.avg_review_score
+            FROM mart.mart_product_metrics p
             WHERE p.product_id = :product_id
-            GROUP BY
-                p.product_id,
-                p.category_name_pt,
-                p.category_name_en,
-                p.product_weight_g,
-                p.product_length_cm,
-                p.product_height_cm,
-                p.product_width_cm,
-                p.product_photos_qty
             """
         )
         row = db.execute(query, {"product_id": product_id}).mappings().first()

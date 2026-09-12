@@ -193,15 +193,26 @@ Snapshot date: 2026-09-06.
   - `package.json`: NPM package metadata with automated code generation commands (`npm run codegen`, `npm run export:openapi`, `npm run generate:types`).
   - `docs/powerbi_setup.md`: Complete Microsoft Power BI operational guide covering DirectQuery connection parameters, star-schema dimensional relationships (`dim_customers`, `fact_orders`, `mart_customer_metrics`, `rfm_segments`, `churn_predictions`), production DAX metric formulas, and visual recommendations.
 - Validated with **6 out of 6 tests passing** in `tests/test_client_contracts.py`.
-- Full project test suite: **152 out of 152 tests passing** across 13 test suites.
+- Full project test suite: **152 out of 152 tests passing** across 13 test suites (when connected to live Neon PostgreSQL).
+
+### 17. Backend Audit & Hardening Phase (Snapshot date: 2026-09-12 — ✅ Complete)
+- Conducted comprehensive backend codebase audit against documentation, API contracts, database, tests, and CI/CD pipelines.
+- Implemented **Phase 7: Test Suite Isolation, CI Hardening & Mart Optimization**:
+  - `tests/conftest.py`: Session-level autouse database mock fixture enabling 100% isolated test suite runs offline and in GitHub Actions CI (114 passing, 38 skipped, 0 failures).
+  - `tests/fixtures/sample_data/`: 11 synthetic schema-aligned CSV sample datasets unblocking `tests/test_etl_ingestion.py`.
+  - `tests/test_security.py`: Isolated rate limiting test to cache endpoint, guaranteeing deterministic HTTP 429 validation.
+  - `backend/config.py`: Harmonized `ENV` and `APP_ENV` environment variable resolution.
+  - `dbt/mercury_analytics/models/marts/`: Created materialized dbt marts `mart_product_metrics` and `mart_seller_metrics`, refactoring `ProductService` and `SellerService` to query them directly.
+  - Codebase cleanup: Removed dead boilerplate (`Base = declarative_base()` and `PaginatedResponse[T]`) and documented `GET /api/customers/segments`.
 
 ---
 
 ## Roadmap Completion Status
-All 6 Phases of the [docs/backend_roadmap.md](file:///Users/gab/Documents/GitHub/Mercury-Backend/docs/backend_roadmap.md) are **100% Complete & Verified**:
-1. Phase 1: Domain & Analytical Endpoints (✅ Complete)
-2. Phase 2: Performance & Caching Layer (✅ Complete)
-3. Phase 3: Production Hardening & API Security (✅ Complete)
-4. Phase 4: Containerization & Cloud Deployment (✅ Complete)
-5. Phase 5: Automated CI/CD Pipeline (✅ Complete)
-6. Phase 6: Client Integration & Schema Contracts (✅ Complete)
+- **Phases 1–6 (Functional Baseline & Integrations)**: ✅ 100% Complete & Verified
+- **Phase 7 (Test Isolation, CI Hardening & Mart Optimization)**: ✅ 100% Complete & Verified
+  - [x] 7.1 Test Suite Isolation & Database Mocking (`tests/test_api.py`, `tests/test_products.py`, `tests/test_sellers.py`)
+  - [x] 7.2 Synthetic Ingestion Test Fixtures (`tests/test_etl_ingestion.py`)
+  - [x] 7.3 Rate Limiting Test Isolation (`tests/test_security.py`)
+  - [x] 7.4 Environment Configuration Harmonization (`APP_ENV` vs `ENV`)
+  - [x] 7.5 Materialized Analytical Marts for Products & Sellers (`mart.mart_product_metrics`, `mart.mart_seller_metrics`)
+  - [x] 7.6 Codebase Hygiene & Endpoint Harmonization (`GET /api/customers/segments`)

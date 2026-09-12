@@ -72,3 +72,34 @@ models:
       - name: is_repeat_buyer
         description: Boolean indicating whether customer has more than 1 delivered order.
         tests: [not_null]
+
+  - name: mart_product_metrics
+    description: >
+      Product intelligence mart table aggregated by product_id.
+      Contains sales velocity, total revenue, unit pricing, reviews, and dimensions.
+    columns:
+      - name: product_id
+        description: Primary key. Unique product identifier.
+        tests: [unique, not_null]
+      - name: total_units_sold
+        description: Total item units sold.
+        tests: [not_null]
+      - name: total_revenue
+        description: Gross merchandise revenue in BRL.
+        tests: [not_null]
+
+  - name: mart_seller_metrics
+    description: >
+      Marketplace seller performance mart table aggregated by seller_id.
+      Contains fulfilled orders, sales, revenues, delays, and review satisfaction.
+    columns:
+      - name: seller_id
+        description: Primary key. Unique seller identifier.
+        tests: [unique, not_null]
+      - name: total_orders_fulfilled
+        description: Total delivered orders fulfilled.
+        tests: [not_null]
+      - name: total_revenue
+        description: Total merchandise revenue generated in BRL.
+        tests: [not_null]
+

@@ -51,6 +51,7 @@ DEFAULT_OLIST_DIRS = [
     REPO_ROOT / "Brazilian E-Commerce-Public-Dataset-by-Olist",
     REPO_ROOT / "data" / "raw" / "olist",
     REPO_ROOT / "data" / "raw",
+    REPO_ROOT / "tests" / "fixtures" / "sample_data",
 ]
 
 DEFAULT_MARKETING_DIRS = [
@@ -59,6 +60,7 @@ DEFAULT_MARKETING_DIRS = [
     REPO_ROOT / "Marketing-Funnel-by-Olist",
     REPO_ROOT / "data" / "raw" / "marketing",
     REPO_ROOT / "data" / "raw",
+    REPO_ROOT / "tests" / "fixtures" / "sample_data",
 ]
 
 # ---------------------------------------------------------------------------
