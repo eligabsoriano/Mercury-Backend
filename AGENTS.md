@@ -34,8 +34,8 @@ When instructions conflict, resolve them using this strict hierarchy:
 - **Database**: PostgreSQL (Neon-hosted), raw schema ingested from Olist Brazilian E-Commerce dataset.
 - **Transformation**: dbt Core (`dbt-postgres`) under `dbt/mercury_analytics/` with 5 analytical marts (`mart_customer_metrics`, `dim_customers`, `fact_orders`, `mart_product_metrics`, `mart_seller_metrics`).
 - **Machine learning**: scikit-learn (RFM segmentation and Random Forest churn prediction models under `ml/`).
-- **API**: FastAPI application under `backend/` exposing 29 REST endpoints across health, analytics, customer intelligence, predictions, retention, products, and sellers.
-- **Testing**: 165 automated tests in `tests/` (127 offline mock/unit tests, 38 live DB integration tests skipped without `DATABASE_URL`).
+- **API**: FastAPI application under `backend/` exposing 34 REST endpoints across health, analytics, customer intelligence, predictions, retention, products, and sellers.
+- **Testing**: 180 automated tests in `tests/` (142 offline mock/unit tests, 38 live DB integration tests skipped without `DATABASE_URL`).
 - **Downstream targets**: React/TypeScript web app (`Mercury-Web`), Flutter mobile app, and Power BI reporting.
 
 # Working Rules

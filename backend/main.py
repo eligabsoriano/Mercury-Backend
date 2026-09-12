@@ -24,6 +24,7 @@ from backend.routers import (
     health_router,
     predictions_router,
     products_router,
+    retention_router,
     sellers_router,
 )
 from backend.security import verify_auth
@@ -87,6 +88,10 @@ app = FastAPI(
             "description": "Real-time ML churn scoring, counterfactual 'what-if' simulations, and model transparency.",
         },
         {
+            "name": "Retention",
+            "description": "Prescriptive playbooks, campaign financial simulations, and Knapsack budget optimization.",
+        },
+        {
             "name": "Health",
             "description": "System health and database connectivity diagnostics.",
         },
@@ -111,6 +116,7 @@ app.include_router(auth_router)
 app.include_router(analytics_router)
 app.include_router(customers_router)
 app.include_router(predictions_router)
+app.include_router(retention_router)
 app.include_router(products_router)
 app.include_router(sellers_router)
 
@@ -146,6 +152,9 @@ def root_index() -> JSONResponse:
                 "products": "/api/products",
                 "product_categories": "/api/products/categories",
                 "sellers": "/api/sellers",
+                "retention_playbooks": "/api/retention/playbooks",
+                "campaign_simulate_roi": "/api/retention/campaigns/simulate-roi",
+                "campaign_optimize_budget": "/api/retention/campaigns/optimize-budget",
             },
         }
     )

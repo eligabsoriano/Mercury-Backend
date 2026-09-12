@@ -68,6 +68,13 @@ def test_static_openapi_json_exists_and_valid() -> None:
         "/api/products",
         "/api/products/categories",
         "/api/sellers",
+        "/api/predictions/churn",
+        "/api/predictions/churn/simulate",
+        "/api/predictions/model/info",
+        "/api/retention/playbooks",
+        "/api/retention/campaigns/simulate-roi",
+        "/api/retention/campaigns/optimize-budget",
+        "/api/retention/recommendations/{customer_unique_id}",
     ]
     for endpoint in expected_endpoints:
         assert endpoint in paths, f"Expected endpoint '{endpoint}' in openapi.json"
@@ -92,6 +99,12 @@ def test_typescript_types_exist_and_complete() -> None:
         "ProductSummary",
         "SellerSummary",
         "TokenResponse",
+        "ChurnPredictionResult",
+        "CounterfactualSimulationResponse",
+        "RetentionPlaybook",
+        "CampaignSimulationResult",
+        "BudgetAllocationResult",
+        "CustomerPlaybookRecommendation",
     ]
     for schema_name in expected_schemas:
         assert schema_name in content, f"Expected schema '{schema_name}' in types/api.ts"

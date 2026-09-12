@@ -10,6 +10,7 @@ from backend.routers.customers import router as customers_router
 from backend.routers.health import router as health_router
 from backend.routers.predictions import router as predictions_router
 from backend.routers.products import router as products_router
+from backend.routers.retention import router as retention_router
 from backend.routers.sellers import router as sellers_router
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "sellers_router",
     "auth_router",
     "predictions_router",
+    "retention_router",
 ]

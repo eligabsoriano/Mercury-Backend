@@ -361,10 +361,19 @@ graph TD
 
 ---
 
-### Phase 9: Prescriptive Retention Economics & Campaign ROI Optimization (Planned)
-- **9.1 Prescriptive Playbooks**: Algorithmic mapping of churn root causes (delivery friction, low engagement, review sentiment) to concrete intervention playbooks (`GET /api/retention/playbooks`).
-- **9.2 Campaign ROI Simulator**: Financial simulation of retention campaigns calculating Net Saved Revenue, intervention costs, and break-even save rates (`POST /api/retention/campaigns/simulate-roi`).
-- **9.3 Budget Allocation Optimizer**: Knapsack optimization maximizing portfolio recovered revenue given a constrained retention budget (`POST /api/retention/campaigns/optimize-budget`).
+### Phase 9: Prescriptive Retention Economics & Campaign ROI Optimization (✅ Complete)
+- **9.1 Prescriptive Playbook Catalog (`GET /api/retention/playbooks`, `GET /api/retention/playbooks/{playbook_id}`)**:
+  - Cataloged 6 domain-specific retention playbooks: `vip_concierge`, `logistics_friction_recovery`, `sentiment_repair_service`, `automated_reengagement`, `loyalty_nurture`, and `organic_nurture`.
+  - Defined intervention channels, unit costs (BRL), expected save rate intervals (min/max), and messaging outreach templates.
+- **9.2 Campaign ROI & Financial Simulation (`POST /api/retention/campaigns/simulate-roi`)**:
+  - Financial simulator calculating Total Campaign Cost, Expected Customers Saved, Gross Revenue Saved, Net Saved Value, ROI percentage, Capital Efficiency Multiplier, and Break-Even Save Rate.
+  - Generates executive narrative recommendations based on profitability thresholds.
+- **9.3 Knapsack Budget Allocation Optimizer (`POST /api/retention/campaigns/optimize-budget`)**:
+  - Solves capital deployment across customer segment pools subject to a hard budget constraint.
+  - Ranks candidate pools by Marginal Capital Efficiency ($\text{Gross Saved} / \text{Cost}$) and allocates funds greedily, tracking coverage ratios and portfolio ROI.
+- **9.4 Personalized Customer Friction Diagnosis (`GET /api/retention/recommendations/{customer_unique_id}`)**:
+  - Evaluates individual customer metrics across transit delays, review ratings, churn probability, and lifetime spend to diagnose root churn friction.
+  - Prescribes targeted playbook with expected financial recovery and customized outreach script.
 
 ---
 
@@ -384,13 +393,14 @@ graph TD
 
 | Metric | Target | Status | Verification Method |
 |:---|:---:|:---:|:---|
-| **CI Suite Pass Rate (Offline / No DB)** | 100% pass | ✅ 127 passed / 0 failures | `pytest tests/ -v` |
-| **Full Live Test Suite (With Neon DB)** | 165/165 tests | ✅ Ready | `pytest tests/ -v` with `DATABASE_URL` configured |
+| **CI Suite Pass Rate (Offline / No DB)** | 100% pass | ✅ 142 passed / 0 failures | `pytest tests/ -v` |
+| **Full Live Test Suite (With Neon DB)** | 180/180 tests | ✅ Ready | `pytest tests/ -v` with `DATABASE_URL` configured |
 | **API Response Latency (Cached)** | < 30ms | ✅ Passed | `curl -w "%{time_total}\n"` on `/api/analytics/overview` |
 | **API Response Latency (Mart Query)** | < 100ms | ✅ Passed | Paginated queries on `/api/customers`, `/api/products`, `/api/sellers` |
 | **Real-Time Inference Latency** | < 50ms | ✅ Passed (<25ms) | `POST /api/predictions/churn` benchmark |
+| **Prescriptive Retention Simulation** | < 15ms | ✅ Passed (<5ms) | `POST /api/retention/campaigns/simulate-roi` benchmark |
 | **Container Build** | Clean build, < 250MB | ✅ Passed | Multi-stage Dockerfile verified |
-| **OpenAPI Compliance** | 100% compliant | ✅ Passed | `python scripts/export_openapi.py` validation |
+| **OpenAPI Compliance** | 100% compliant (34 endpoints) | ✅ Passed | `python scripts/export_openapi.py` validation |
 | **Code Formatting & Linting** | 0 warnings, 0 errors | ✅ Passed | `ruff check` and `ruff format --check` |
 
 ---
@@ -400,7 +410,7 @@ graph TD
 | Phase / Task | Area | Priority | Status | Rationale |
 |:---|:---|:---:|:---:|:---|
 | **Phase 8: Real-Time Inference & Simulation** | MLOps / API | 🔴 High | ✅ Complete | Transforms batch ML into real-time interactive decision-making and what-if simulation. |
-| **Phase 9: Prescriptive Retention Economics** | Analytics / Finance | 🔴 High | ⏳ Planned | Solves the financial ROI dilemma of retention campaigns. |
+| **Phase 9: Prescriptive Retention Economics** | Analytics / Finance | 🔴 High | ✅ Complete | Solves the financial ROI dilemma and capital-efficient allocation for retention campaigns. |
 | **Phase 10: Marketplace Marketing Funnel** | Data Engineering | 🟡 Medium | ⏳ Planned | Activates dark marketing funnel data for complete two-sided marketplace intelligence. |
 | **Phase 11: Production Pipeline Orchestrator** | DevOps / Data Eng | 🟡 Medium | ⏳ Planned | Automates end-to-end data pipeline execution and health monitoring. |
 
@@ -415,7 +425,7 @@ graph TD
 - **Phase 6: Client Integration & Schema Contracts** — ✅ 100% Complete & Verified
 - **Phase 7: Test Isolation, CI Hardening & Mart Optimization** — ✅ 100% Complete & Verified
 - **Phase 8: Real-Time ML Inference & Counterfactual Simulation** — ✅ 100% Complete & Verified
-- **Phase 9: Prescriptive Retention Economics & Campaign ROI** — ⏳ Planned
+- **Phase 9: Prescriptive Retention Economics & Campaign ROI** — ✅ 100% Complete & Verified
 - **Phase 10: Two-Sided Marketplace Marketing Funnel** — ⏳ Planned
 - **Phase 11: Production Pipeline Orchestrator & Observability** — ⏳ Planned
 

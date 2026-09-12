@@ -108,7 +108,7 @@ The raw ingestion layer preserves source column names exactly.
 - **In-Memory Rate Limiting**: Sliding-window counter with monotonic timestamps returning HTTP 429 Too Many Requests and `Retry-After` header when requests exceed 120 req/min per IP.
 - **Request Tracing & Latency Headers**: Attaches unique `X-Request-ID` (UUID4) and `X-Process-Time` (in milliseconds) to all HTTP responses. Structured access logs emitted under `mercury.access`.
 
-## API Surface (backend/ — 29 Live Endpoints)
+## API Surface (backend/ — 34 Live Endpoints)
 
 | Category | Method & Path | Description |
 |:---|:---|:---|
@@ -136,6 +136,11 @@ The raw ingestion layer preserves source column names exactly.
 | **Predictions** | `POST /api/predictions/churn/simulate` | Counterfactual 'what-if' operational intervention simulation |
 | **Predictions** | `POST /api/predictions/churn/simulate/{customer_unique_id}` | Customer-specific simulation hydrating baseline from mart |
 | **Predictions** | `GET /api/predictions/model/info` | Runtime model metadata, feature schemas, and evaluation metrics |
+| **Retention** | `GET /api/retention/playbooks` | Prescriptive intervention playbooks catalog (6 strategies) |
+| **Retention** | `GET /api/retention/playbooks/{playbook_id}` | Playbook details, costs, save rates, and outreach templates |
+| **Retention** | `POST /api/retention/campaigns/simulate-roi` | Campaign financial simulation (gross savings, net value, ROI%, break-even) |
+| **Retention** | `POST /api/retention/campaigns/optimize-budget` | Knapsack capital deployment optimizer maximizing net revenue recovery |
+| **Retention** | `GET /api/retention/recommendations/{customer_unique_id}` | Individual churn friction diagnosis and optimal playbook recommendation |
 | **Products** | `GET /api/products` | Paginated catalog search with category & rating filters |
 | **Products** | `GET /api/products/categories` | Product category breakdown with sales & review scores |
 | **Products** | `GET /api/products/{id}` | Product 360 scorecard with specs & revenue metrics |
@@ -185,7 +190,7 @@ mercury/
 │   ├── security.py           ← Dual API Key & HMAC-SHA256 JWT auth dependencies
 │   ├── routers/              ← Modular REST route handlers
 │   ├── schemas/              ← Pydantic v2 validation models
-│   └── services/             ← Business query services (Analytics, Customer, Seller, Product, Prediction)
+│   └── services/             ← Business query services (Analytics, Customer, Seller, Product, Prediction, Retention)
 ├── dbt/
 │   └── mercury_analytics/    ← dbt transformation project
 │       ├── models/
@@ -196,7 +201,7 @@ mercury/
 │       └── dbt_project.yml
 ├── docs/                     ← System documentation
 │   ├── architecture.md       ← Full system flow, data models, and API surface
-│   ├── backend_roadmap.md    ← Engineering roadmap (Phases 1-11 with Phase 8 Real-Time ML active)
+│   ├── backend_roadmap.md    ← Engineering roadmap (Phases 1-11 with Phase 9 Prescriptive Retention active)
 │   ├── business_case.md      ← Retention dilemma and SDG business justification
 │   ├── deployment.md         ← Docker, Docker Compose, and Cloud PaaS operations guide
 │   ├── methodology.md        ← RFM quintile scoring and ML churn methodology
@@ -207,9 +212,9 @@ mercury/
 ├── scripts/
 │   └── export_openapi.py     ← Static OpenAPI 3.1 schema exporter
 ├── sql/                      ← DDL schema, views, and migration runner
-├── tests/                    ← Comprehensive 152-test automated test suite (13 modules)
+├── tests/                    ← Comprehensive 180-test automated test suite (14 modules)
 ├── types/
-│   └── api.ts                ← Auto-generated TypeScript types (2,502 lines)
+│   └── api.ts                ← Auto-generated TypeScript types (3,520 lines)
 ├── .dockerignore
 ├── .env.example
 ├── .gitignore

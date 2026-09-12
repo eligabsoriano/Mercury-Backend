@@ -39,6 +39,16 @@ from backend.schemas.prediction import (
     FeatureContribution,
     ModelMetadataResponse,
 )
+from backend.schemas.retention import (
+    BudgetAllocationRequest,
+    BudgetAllocationResult,
+    CampaignSimulationRequest,
+    CampaignSimulationResult,
+    CandidatePoolInput,
+    CustomerPlaybookRecommendation,
+    PoolAllocation,
+    RetentionPlaybook,
+)
 from backend.schemas.rfm import (
     RFMScorecard,
     SegmentDistribution,
@@ -70,4 +80,12 @@ __all__ = [
     "CounterfactualSimulationResponse",
     "FeatureContribution",
     "ModelMetadataResponse",
+    "RetentionPlaybook",
+    "CampaignSimulationRequest",
+    "CampaignSimulationResult",
+    "CandidatePoolInput",
+    "PoolAllocation",
+    "BudgetAllocationRequest",
+    "BudgetAllocationResult",
+    "CustomerPlaybookRecommendation",
 ]

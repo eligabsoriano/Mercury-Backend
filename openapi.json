@@ -1,6 +1,305 @@
 {
   "components": {
     "schemas": {
+      "BudgetAllocationRequest": {
+        "description": "Request schema for optimizing capital deployment across candidate retention pools.",
+        "properties": {
+          "candidate_pools": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CandidatePoolInput"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional list of custom pools. If omitted, pools are dynamically hydrated from live database marts.",
+            "title": "Candidate Pools"
+          },
+          "total_budget": {
+            "description": "Total capital available to deploy in BRL",
+            "minimum": 1.0,
+            "title": "Total Budget",
+            "type": "number"
+          }
+        },
+        "required": [
+          "total_budget"
+        ],
+        "title": "BudgetAllocationRequest",
+        "type": "object"
+      },
+      "BudgetAllocationResult": {
+        "description": "Optimal portfolio budget allocation maximizing net saved revenue.",
+        "properties": {
+          "allocated_budget": {
+            "description": "Total budget successfully deployed (BRL)",
+            "title": "Allocated Budget",
+            "type": "number"
+          },
+          "allocations": {
+            "description": "Pool-by-pool allocation breakdown",
+            "items": {
+              "$ref": "#/components/schemas/PoolAllocation"
+            },
+            "title": "Allocations",
+            "type": "array"
+          },
+          "portfolio_efficiency": {
+            "description": "Overall gross revenue saved per BRL spent",
+            "title": "Portfolio Efficiency",
+            "type": "number"
+          },
+          "portfolio_roi": {
+            "description": "Overall portfolio ROI percentage",
+            "title": "Portfolio Roi",
+            "type": "number"
+          },
+          "remaining_budget": {
+            "description": "Unspent budget (BRL)",
+            "title": "Remaining Budget",
+            "type": "number"
+          },
+          "total_budget": {
+            "description": "Total budget input (BRL)",
+            "title": "Total Budget",
+            "type": "number"
+          },
+          "total_customers_targeted": {
+            "description": "Total customers reached across all pools",
+            "title": "Total Customers Targeted",
+            "type": "integer"
+          },
+          "total_gross_recovered": {
+            "description": "Total gross revenue protected (BRL)",
+            "title": "Total Gross Recovered",
+            "type": "number"
+          },
+          "total_net_value": {
+            "description": "Portfolio net value = gross_recovered - allocated (BRL)",
+            "title": "Total Net Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "total_budget",
+          "allocated_budget",
+          "remaining_budget",
+          "total_customers_targeted",
+          "total_gross_recovered",
+          "total_net_value",
+          "portfolio_roi",
+          "portfolio_efficiency",
+          "allocations"
+        ],
+        "title": "BudgetAllocationResult",
+        "type": "object"
+      },
+      "CampaignSimulationRequest": {
+        "description": "Request schema for simulating retention campaign financial economics.\nSupply explicit volume/revenue metrics, or target specific customer IDs / playbooks.",
+        "properties": {
+          "cost_per_customer": {
+            "description": "Cost of the intervention per targeted customer in BRL (discounts, outreach)",
+            "minimum": 0.0,
+            "title": "Cost Per Customer",
+            "type": "number"
+          },
+          "customer_unique_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional explicit customer IDs targeted",
+            "title": "Customer Unique Ids"
+          },
+          "expected_save_rate": {
+            "description": "Estimated fraction of targeted customers successfully retained (e.g. 0.25 = 25%)",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Expected Save Rate",
+            "type": "number"
+          },
+          "playbook_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional playbook ID to pre-populate default costs and save rates",
+            "title": "Playbook Id"
+          },
+          "target_customer_count": {
+            "description": "Number of at-risk customers targeted by the campaign",
+            "minimum": 1.0,
+            "title": "Target Customer Count",
+            "type": "integer"
+          },
+          "target_revenue_at_risk": {
+            "description": "Total portfolio revenue at risk represented by targeted customers (BRL)",
+            "minimum": 0.0,
+            "title": "Target Revenue At Risk",
+            "type": "number"
+          }
+        },
+        "required": [
+          "target_customer_count",
+          "target_revenue_at_risk",
+          "cost_per_customer",
+          "expected_save_rate"
+        ],
+        "title": "CampaignSimulationRequest",
+        "type": "object"
+      },
+      "CampaignSimulationResult": {
+        "description": "Financial output metrics for a simulated retention campaign.",
+        "properties": {
+          "break_even_save_rate": {
+            "description": "Minimum save rate required for the campaign to break even (net value = 0)",
+            "title": "Break Even Save Rate",
+            "type": "number"
+          },
+          "capital_efficiency_multiplier": {
+            "description": "Efficiency ratio = gross_revenue_saved / total_campaign_cost",
+            "title": "Capital Efficiency Multiplier",
+            "type": "number"
+          },
+          "gross_revenue_saved": {
+            "description": "Gross revenue protected = target_revenue_at_risk * expected_save_rate (BRL)",
+            "title": "Gross Revenue Saved",
+            "type": "number"
+          },
+          "is_profitable": {
+            "description": "True if projected net value > 0",
+            "title": "Is Profitable",
+            "type": "boolean"
+          },
+          "net_saved_value": {
+            "description": "Net economic gain = gross_revenue_saved - total_campaign_cost (BRL)",
+            "title": "Net Saved Value",
+            "type": "number"
+          },
+          "playbook_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Playbook ID if specified",
+            "title": "Playbook Id"
+          },
+          "projected_customers_saved": {
+            "description": "Estimated number of customers retained",
+            "title": "Projected Customers Saved",
+            "type": "integer"
+          },
+          "recommendation": {
+            "description": "Strategic executive recommendation based on ROI and break-even",
+            "title": "Recommendation",
+            "type": "string"
+          },
+          "roi_percentage": {
+            "description": "Return on Investment = (net_saved_value / total_campaign_cost) * 100",
+            "title": "Roi Percentage",
+            "type": "number"
+          },
+          "target_customer_count": {
+            "description": "Total customers targeted",
+            "title": "Target Customer Count",
+            "type": "integer"
+          },
+          "target_revenue_at_risk": {
+            "description": "Gross revenue at risk targeted (BRL)",
+            "title": "Target Revenue At Risk",
+            "type": "number"
+          },
+          "total_campaign_cost": {
+            "description": "Total cost of campaign execution (BRL)",
+            "title": "Total Campaign Cost",
+            "type": "number"
+          }
+        },
+        "required": [
+          "target_customer_count",
+          "total_campaign_cost",
+          "target_revenue_at_risk",
+          "projected_customers_saved",
+          "gross_revenue_saved",
+          "net_saved_value",
+          "roi_percentage",
+          "break_even_save_rate",
+          "capital_efficiency_multiplier",
+          "is_profitable",
+          "recommendation"
+        ],
+        "title": "CampaignSimulationResult",
+        "type": "object"
+      },
+      "CandidatePoolInput": {
+        "description": "Candidate customer segment or playbook pool for budget optimization.",
+        "properties": {
+          "available_customers": {
+            "description": "Total eligible customers in pool",
+            "minimum": 1.0,
+            "title": "Available Customers",
+            "type": "integer"
+          },
+          "cost_per_customer": {
+            "description": "Cost per customer intervention (BRL)",
+            "minimum": 0.0,
+            "title": "Cost Per Customer",
+            "type": "number"
+          },
+          "expected_save_rate": {
+            "description": "Expected retention rate",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Expected Save Rate",
+            "type": "number"
+          },
+          "playbook_id": {
+            "description": "Playbook applied to this pool",
+            "title": "Playbook Id",
+            "type": "string"
+          },
+          "pool_name": {
+            "description": "Identifier name for this customer pool",
+            "title": "Pool Name",
+            "type": "string"
+          },
+          "total_revenue_at_risk": {
+            "description": "Total revenue at risk for pool (BRL)",
+            "minimum": 0.0,
+            "title": "Total Revenue At Risk",
+            "type": "number"
+          }
+        },
+        "required": [
+          "pool_name",
+          "playbook_id",
+          "available_customers",
+          "total_revenue_at_risk",
+          "cost_per_customer",
+          "expected_save_rate"
+        ],
+        "title": "CandidatePoolInput",
+        "type": "object"
+      },
       "CategoryListResponse": {
         "description": "Aggregate category list response.",
         "properties": {
@@ -978,6 +1277,68 @@
         "title": "CustomerListResponse",
         "type": "object"
       },
+      "CustomerPlaybookRecommendation": {
+        "description": "Prescriptive playbook recommendation tailored to a specific customer's churn friction.",
+        "properties": {
+          "churn_probability": {
+            "description": "Customer churn probability",
+            "title": "Churn Probability",
+            "type": "number"
+          },
+          "customer_unique_id": {
+            "description": "Unique customer ID",
+            "title": "Customer Unique Id",
+            "type": "string"
+          },
+          "expected_gross_recovery": {
+            "description": "Expected revenue saved from intervention",
+            "title": "Expected Gross Recovery",
+            "type": "number"
+          },
+          "primary_friction": {
+            "description": "Identified primary churn root cause",
+            "title": "Primary Friction",
+            "type": "string"
+          },
+          "projected_net_gain": {
+            "description": "Expected net gain after playbook cost",
+            "title": "Projected Net Gain",
+            "type": "number"
+          },
+          "recommended_playbook": {
+            "$ref": "#/components/schemas/RetentionPlaybook",
+            "description": "Top recommended intervention playbook"
+          },
+          "revenue_at_risk": {
+            "description": "Customer financial exposure (BRL)",
+            "title": "Revenue At Risk",
+            "type": "number"
+          },
+          "risk_tier": {
+            "description": "Customer risk tier",
+            "title": "Risk Tier",
+            "type": "string"
+          },
+          "suggested_message": {
+            "description": "Personalized outreach message template",
+            "title": "Suggested Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "customer_unique_id",
+          "churn_probability",
+          "risk_tier",
+          "revenue_at_risk",
+          "primary_friction",
+          "recommended_playbook",
+          "expected_gross_recovery",
+          "projected_net_gain",
+          "suggested_message"
+        ],
+        "title": "CustomerPlaybookRecommendation",
+        "type": "object"
+      },
       "CustomerReviewMetrics": {
         "description": "Customer feedback and sentiment satisfaction metrics.",
         "properties": {
@@ -1412,6 +1773,75 @@
         "title": "PaginationMeta",
         "type": "object"
       },
+      "PoolAllocation": {
+        "description": "Allocated spend and projected return for an individual pool.",
+        "properties": {
+          "allocated_spend": {
+            "description": "Budget allocated to this pool (BRL)",
+            "title": "Allocated Spend",
+            "type": "number"
+          },
+          "coverage_ratio": {
+            "description": "Fraction of pool funded (customers_targeted / max)",
+            "title": "Coverage Ratio",
+            "type": "number"
+          },
+          "customers_targeted": {
+            "description": "Number of customers funded in this pool",
+            "title": "Customers Targeted",
+            "type": "integer"
+          },
+          "gross_revenue_saved": {
+            "description": "Projected gross revenue saved (BRL)",
+            "title": "Gross Revenue Saved",
+            "type": "number"
+          },
+          "marginal_efficiency": {
+            "description": "Revenue saved per BRL spent",
+            "title": "Marginal Efficiency",
+            "type": "number"
+          },
+          "max_available_customers": {
+            "description": "Total available customers in pool",
+            "title": "Max Available Customers",
+            "type": "integer"
+          },
+          "net_value": {
+            "description": "Projected net gain (BRL)",
+            "title": "Net Value",
+            "type": "number"
+          },
+          "playbook_id": {
+            "description": "Playbook ID",
+            "title": "Playbook Id",
+            "type": "string"
+          },
+          "pool_name": {
+            "description": "Customer pool name",
+            "title": "Pool Name",
+            "type": "string"
+          },
+          "pool_roi": {
+            "description": "Projected pool ROI percentage",
+            "title": "Pool Roi",
+            "type": "number"
+          }
+        },
+        "required": [
+          "pool_name",
+          "playbook_id",
+          "customers_targeted",
+          "max_available_customers",
+          "coverage_ratio",
+          "allocated_spend",
+          "gross_revenue_saved",
+          "net_value",
+          "pool_roi",
+          "marginal_efficiency"
+        ],
+        "title": "PoolAllocation",
+        "type": "object"
+      },
       "PortfolioOverview": {
         "description": "Macro-level portfolio retention and customer intelligence KPIs.",
         "properties": {
@@ -1758,6 +2188,80 @@
           "cohorts"
         ],
         "title": "RetentionAnalyticsResponse",
+        "type": "object"
+      },
+      "RetentionPlaybook": {
+        "description": "Cataloged prescriptive retention action playbook.",
+        "properties": {
+          "action_template": {
+            "description": "Sample communication or outreach script",
+            "title": "Action Template",
+            "type": "string"
+          },
+          "default_cost_per_customer": {
+            "description": "Estimated unit cost per customer in BRL",
+            "minimum": 0.0,
+            "title": "Default Cost Per Customer",
+            "type": "number"
+          },
+          "description": {
+            "description": "Operational summary and objective",
+            "title": "Description",
+            "type": "string"
+          },
+          "estimated_save_rate_max": {
+            "description": "Optimistic expected customer save rate",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Estimated Save Rate Max",
+            "type": "number"
+          },
+          "estimated_save_rate_min": {
+            "description": "Conservative expected customer save rate",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Estimated Save Rate Min",
+            "type": "number"
+          },
+          "intervention_channel": {
+            "description": "Outreach channel (e.g. Phone/Concierge, Email, WhatsApp, In-App)",
+            "title": "Intervention Channel",
+            "type": "string"
+          },
+          "name": {
+            "description": "Human-readable playbook name",
+            "title": "Name",
+            "type": "string"
+          },
+          "playbook_id": {
+            "description": "Unique playbook identifier slug",
+            "title": "Playbook Id",
+            "type": "string"
+          },
+          "recommended_action": {
+            "description": "Specific business intervention prescribed",
+            "title": "Recommended Action",
+            "type": "string"
+          },
+          "target_criteria": {
+            "description": "Target segment, risk tier, or friction trigger",
+            "title": "Target Criteria",
+            "type": "string"
+          }
+        },
+        "required": [
+          "playbook_id",
+          "name",
+          "description",
+          "target_criteria",
+          "intervention_channel",
+          "recommended_action",
+          "default_cost_per_customer",
+          "estimated_save_rate_min",
+          "estimated_save_rate_max",
+          "action_template"
+        ],
+        "title": "RetentionPlaybook",
         "type": "object"
       },
       "RetentionPrioritySummary": {
@@ -4243,6 +4747,262 @@
         ]
       }
     },
+    "/api/retention/campaigns/optimize-budget": {
+      "post": {
+        "description": "Solve the optimal capital deployment across candidate customer retention pools given a fixed budget. Maximizes portfolio recovered revenue by prioritizing pools with highest marginal capital efficiency.",
+        "operationId": "optimize_retention_budget_api_retention_campaigns_optimize_budget_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BudgetAllocationRequest",
+                "description": "Total budget available and optional candidate pool definitions",
+                "examples": [
+                  {
+                    "total_budget": 50000.0
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetAllocationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Optimize Retention Budget Allocation",
+        "tags": [
+          "Retention"
+        ]
+      }
+    },
+    "/api/retention/campaigns/simulate-roi": {
+      "post": {
+        "description": "Simulate the financial unit economics of a customer retention campaign. Computes gross revenue saved, total campaign execution costs, net economic gain, ROI percentage, break-even save rate, and an executive recommendation.",
+        "operationId": "simulate_campaign_roi_api_retention_campaigns_simulate_roi_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CampaignSimulationRequest",
+                "description": "Campaign parameters including target volume, revenue at risk, cost, and expected save rate",
+                "examples": [
+                  {
+                    "cost_per_customer": 45.0,
+                    "expected_save_rate": 0.35,
+                    "playbook_id": "vip_concierge",
+                    "target_customer_count": 500,
+                    "target_revenue_at_risk": 250000.0
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignSimulationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Simulate Campaign Financial ROI",
+        "tags": [
+          "Retention"
+        ]
+      }
+    },
+    "/api/retention/playbooks": {
+      "get": {
+        "description": "Retrieve the complete catalog of prescriptive retention intervention playbooks, including target friction criteria, outreach channels, unit costs, expected save rates, and communication templates.",
+        "operationId": "list_playbooks_api_retention_playbooks_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RetentionPlaybook"
+                  },
+                  "title": "Response List Playbooks Api Retention Playbooks Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Prescriptive Retention Playbooks",
+        "tags": [
+          "Retention"
+        ]
+      }
+    },
+    "/api/retention/playbooks/{playbook_id}": {
+      "get": {
+        "description": "Retrieve operational specifications for an individual retention playbook.",
+        "operationId": "get_playbook_api_retention_playbooks__playbook_id__get",
+        "parameters": [
+          {
+            "description": "Unique playbook slug (e.g. vip_concierge, logistics_friction_recovery)",
+            "in": "path",
+            "name": "playbook_id",
+            "required": true,
+            "schema": {
+              "description": "Unique playbook slug (e.g. vip_concierge, logistics_friction_recovery)",
+              "title": "Playbook Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionPlaybook"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Retention Playbook by ID",
+        "tags": [
+          "Retention"
+        ]
+      }
+    },
+    "/api/retention/recommendations/{customer_unique_id}": {
+      "get": {
+        "description": "Diagnose primary churn root causes (logistics delays, review ratings, inactivity lapse) for an individual customer and prescribe the optimal retention playbook with expected net recovery.",
+        "operationId": "get_customer_retention_recommendation_api_retention_recommendations__customer_unique_id__get",
+        "parameters": [
+          {
+            "description": "Unique customer identifier (customer_unique_id)",
+            "in": "path",
+            "name": "customer_unique_id",
+            "required": true,
+            "schema": {
+              "description": "Unique customer identifier (customer_unique_id)",
+              "title": "Customer Unique Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerPlaybookRecommendation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Customer Prescriptive Playbook Recommendation",
+        "tags": [
+          "Retention"
+        ]
+      }
+    },
     "/api/sellers": {
       "get": {
         "description": "Returns a paginated list of marketplace sellers with gross merchandise value, fulfilled orders, delivery delay averages, late delivery rates, and review ratings.",
@@ -4502,6 +5262,10 @@
     {
       "description": "Real-time ML churn scoring, counterfactual 'what-if' simulations, and model transparency.",
       "name": "Predictions"
+    },
+    {
+      "description": "Prescriptive playbooks, campaign financial simulations, and Knapsack budget optimization.",
+      "name": "Retention"
     },
     {
       "description": "System health and database connectivity diagnostics.",
