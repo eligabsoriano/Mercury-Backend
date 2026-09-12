@@ -31,6 +31,14 @@ from backend.schemas.customer import (
     CustomerReviewMetrics,
     CustomerSummary,
 )
+from backend.schemas.prediction import (
+    ChurnPredictionInput,
+    ChurnPredictionResult,
+    CounterfactualSimulationRequest,
+    CounterfactualSimulationResponse,
+    FeatureContribution,
+    ModelMetadataResponse,
+)
 from backend.schemas.rfm import (
     RFMScorecard,
     SegmentDistribution,
@@ -56,4 +64,10 @@ __all__ = [
     "TokenRequest",
     "TokenResponse",
     "UserIdentity",
+    "ChurnPredictionInput",
+    "ChurnPredictionResult",
+    "CounterfactualSimulationRequest",
+    "CounterfactualSimulationResponse",
+    "FeatureContribution",
+    "ModelMetadataResponse",
 ]

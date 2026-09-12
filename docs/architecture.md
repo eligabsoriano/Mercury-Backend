@@ -108,7 +108,7 @@ The raw ingestion layer preserves source column names exactly.
 - **In-Memory Rate Limiting**: Sliding-window counter with monotonic timestamps returning HTTP 429 Too Many Requests and `Retry-After` header when requests exceed 120 req/min per IP.
 - **Request Tracing & Latency Headers**: Attaches unique `X-Request-ID` (UUID4) and `X-Process-Time` (in milliseconds) to all HTTP responses. Structured access logs emitted under `mercury.access`.
 
-## API Surface (backend/ — 25 Live Endpoints)
+## API Surface (backend/ — 29 Live Endpoints)
 
 | Category | Method & Path | Description |
 |:---|:---|:---|
@@ -132,6 +132,10 @@ The raw ingestion layer preserves source column names exactly.
 | **Customers** | `GET /api/customers/{id}` | Customer 360 profile (orders, friction, RFM, churn) |
 | **Customers** | `GET /api/customers/{id}/rfm` | Individual customer RFM scorecard |
 | **Customers** | `GET /api/customers/{id}/churn` | Individual churn probability & risk tier scorecard |
+| **Predictions** | `POST /api/predictions/churn` | Real-time on-demand churn scoring and feature contributions |
+| **Predictions** | `POST /api/predictions/churn/simulate` | Counterfactual 'what-if' operational intervention simulation |
+| **Predictions** | `POST /api/predictions/churn/simulate/{customer_unique_id}` | Customer-specific simulation hydrating baseline from mart |
+| **Predictions** | `GET /api/predictions/model/info` | Runtime model metadata, feature schemas, and evaluation metrics |
 | **Products** | `GET /api/products` | Paginated catalog search with category & rating filters |
 | **Products** | `GET /api/products/categories` | Product category breakdown with sales & review scores |
 | **Products** | `GET /api/products/{id}` | Product 360 scorecard with specs & revenue metrics |
@@ -181,7 +185,7 @@ mercury/
 │   ├── security.py           ← Dual API Key & HMAC-SHA256 JWT auth dependencies
 │   ├── routers/              ← Modular REST route handlers
 │   ├── schemas/              ← Pydantic v2 validation models
-│   └── services/             ← Business query services (Analytics, Customer, Seller, Product)
+│   └── services/             ← Business query services (Analytics, Customer, Seller, Product, Prediction)
 ├── dbt/
 │   └── mercury_analytics/    ← dbt transformation project
 │       ├── models/
@@ -192,7 +196,7 @@ mercury/
 │       └── dbt_project.yml
 ├── docs/                     ← System documentation
 │   ├── architecture.md       ← Full system flow, data models, and API surface
-│   ├── backend_roadmap.md    ← Complete backend development roadmap (all 7 phases complete)
+│   ├── backend_roadmap.md    ← Engineering roadmap (Phases 1-11 with Phase 8 Real-Time ML active)
 │   ├── business_case.md      ← Retention dilemma and SDG business justification
 │   ├── deployment.md         ← Docker, Docker Compose, and Cloud PaaS operations guide
 │   ├── methodology.md        ← RFM quintile scoring and ML churn methodology

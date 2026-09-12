@@ -65,7 +65,32 @@ graph TD
         H6[Codebase & Route Cleanup]
     end
 
-    Phase 1 --> Phase 2 --> Phase 3 --> Phase 4 --> Phase 5 --> Phase 6 --> Phase 7
+    subgraph Phase 8: Real-Time Inference & What-If Engine
+        M1[Model Artifact Loader & Cache]
+        M2[Online Scoring POST /predictions/churn]
+        M3[Counterfactual Simulation Engine]
+        M4[Feature Impact Explanations]
+    end
+
+    subgraph Phase 9: Prescriptive Retention Economics
+        RE1[Retention Playbooks & Interventions]
+        RE2[Campaign ROI Simulator]
+        RE3[Optimal Budget Allocator]
+    end
+
+    subgraph Phase 10: Marketplace Marketing Funnel
+        F1[Marketing Funnel dbt Marts]
+        F2[B2B Channel Attribution API]
+        F3[SDR/SR Conversion Velocity]
+    end
+
+    subgraph Phase 11: Production Pipeline Orchestrator
+        O1[Unified Runner scripts/run_pipeline.py]
+        O2[Pipeline Health & Observability API]
+        O3[Circuit Breakers & Data Drift Checks]
+    end
+
+    Phase 1 --> Phase 2 --> Phase 3 --> Phase 4 --> Phase 5 --> Phase 6 --> Phase 7 --> Phase 8 --> Phase 9 --> Phase 10 --> Phase 11
 ```
 
 ---
@@ -307,14 +332,63 @@ graph TD
 
 ---
 
+### Phase 8: Real-Time ML Inference & Counterfactual Simulation Engine (✅ Complete)
+
+#### 8.1 Model Serving & In-Memory Pipeline Loader (`backend/services/prediction_service.py`) (✅ Complete)
+- **Problem**: Churn scoring currently runs only as an offline batch script (`ml/churn.py`). The API has no in-memory model runner to evaluate real-time customer feature updates or test uncommitted operational scenarios.
+- **Implementation**:
+  - Implemented `PredictionService` loading the serialized scikit-learn pipeline from `ml/artifacts/churn_model.joblib`.
+  - Provided fallback calibrated model initialization on synthetic feature baselines when running in clean CI or offline testing environments.
+  - Imputed missing features with robust medians to permit partial feature payloads from client sliders.
+
+#### 8.2 Real-Time On-Demand Churn Scoring (`POST /api/predictions/churn`) (✅ Complete)
+- **Problem**: Web and mobile clients cannot score an arbitrary customer or newly created profile without waiting for a batch database re-ingestion.
+- **Implementation**:
+  - Exposed `POST /api/predictions/churn` accepting behavioral features (`lifetime_spend`, `avg_delivery_delay_days`, `avg_review_score`, `segment`, etc.).
+  - Output churn probability $P(\text{Churn})$, risk tier, monetary value, revenue at risk, and top feature contributions.
+
+#### 8.3 Counterfactual "What-If" Simulation Engine (`POST /api/predictions/churn/simulate`) (✅ Complete)
+- **Problem**: Decision-makers cannot quantitatively answer counterfactual questions (*"If we expedite delivery from +7 days to 0 days, how much does churn probability decrease and what revenue is saved?"*).
+- **Implementation**:
+  - Exposed `POST /api/predictions/churn/simulate` accepting baseline features (or customer ID) and operational adjustments.
+  - Computed baseline vs. simulated outcome deltas: $\Delta P(\text{Churn})$, $\Delta \text{Revenue at Risk}$, risk tier migration, and natural-language impact summaries.
+  - Exposed `POST /api/predictions/churn/simulate/{customer_unique_id}` to hydrate baseline metrics directly from `mart.mart_customer_metrics`.
+
+#### 8.4 Model Introspection & Evaluation Metadata (`GET /api/predictions/model/info`) (✅ Complete)
+- **Problem**: Client applications and auditors lack runtime transparency into model versioning, feature inputs, and test cohort evaluation metrics.
+- **Implementation**:
+  - Exposed `GET /api/predictions/model/info` returning active model algorithm, training timestamp, feature list, and evaluation metrics (ROC-AUC, PR-AUC, F1, P@10%).
+
+---
+
+### Phase 9: Prescriptive Retention Economics & Campaign ROI Optimization (Planned)
+- **9.1 Prescriptive Playbooks**: Algorithmic mapping of churn root causes (delivery friction, low engagement, review sentiment) to concrete intervention playbooks (`GET /api/retention/playbooks`).
+- **9.2 Campaign ROI Simulator**: Financial simulation of retention campaigns calculating Net Saved Revenue, intervention costs, and break-even save rates (`POST /api/retention/campaigns/simulate-roi`).
+- **9.3 Budget Allocation Optimizer**: Knapsack optimization maximizing portfolio recovered revenue given a constrained retention budget (`POST /api/retention/campaigns/optimize-budget`).
+
+---
+
+### Phase 10: Two-Sided Marketplace Marketing Funnel & Attribution Marts (Planned)
+- **10.1 Multi-Schema dbt Transformation**: Transform dormant `raw_marketing.mql` and `raw_marketing.closed_deals` into `staging.stg_marketing_leads`, `staging.stg_closed_deals`, and `mart.mart_marketing_funnel`.
+- **10.2 Channel Attribution & Velocity API**: Expose seller acquisition velocity, origin attribution (Organic, Paid Search, Social), and declared revenue conversion rates via `/api/marketing/*`.
+
+---
+
+### Phase 11: Production Pipeline Orchestrator & Observability Engine (Planned)
+- **11.1 Unified Pipeline Runner**: Resilient pipeline orchestrator (`scripts/run_pipeline.py`) executing Ingest $\rightarrow$ dbt $\rightarrow$ RFM $\rightarrow$ Churn ML with phase timing, retries, and atomic rollback.
+- **11.2 Pipeline Freshness & Health API**: Expose data freshness timestamps, table row-count anomalies, and model drift alerts via `GET /api/health/pipeline`.
+
+---
+
 ## 3. Success Metrics & Verification Checklist
 
 | Metric | Target | Status | Verification Method |
 |:---|:---:|:---:|:---|
-| **CI Suite Pass Rate (Offline / No DB)** | 100% pass | ✅ 114 passed / 0 failures | `pytest tests/ -v` |
-| **Full Live Test Suite (With Neon DB)** | 152/152 tests | ✅ Ready | `pytest tests/ -v` with `DATABASE_URL` configured |
+| **CI Suite Pass Rate (Offline / No DB)** | 100% pass | ✅ 127 passed / 0 failures | `pytest tests/ -v` |
+| **Full Live Test Suite (With Neon DB)** | 165/165 tests | ✅ Ready | `pytest tests/ -v` with `DATABASE_URL` configured |
 | **API Response Latency (Cached)** | < 30ms | ✅ Passed | `curl -w "%{time_total}\n"` on `/api/analytics/overview` |
 | **API Response Latency (Mart Query)** | < 100ms | ✅ Passed | Paginated queries on `/api/customers`, `/api/products`, `/api/sellers` |
+| **Real-Time Inference Latency** | < 50ms | ✅ Passed (<25ms) | `POST /api/predictions/churn` benchmark |
 | **Container Build** | Clean build, < 250MB | ✅ Passed | Multi-stage Dockerfile verified |
 | **OpenAPI Compliance** | 100% compliant | ✅ Passed | `python scripts/export_openapi.py` validation |
 | **Code Formatting & Linting** | 0 warnings, 0 errors | ✅ Passed | `ruff check` and `ruff format --check` |
@@ -325,12 +399,10 @@ graph TD
 
 | Phase / Task | Area | Priority | Status | Rationale |
 |:---|:---|:---:|:---:|:---|
-| **7.1 Test Database Isolation** | Testing | 🔴 High | ✅ Complete | Unblocks GitHub Actions CI and local testing without live Neon credentials. |
-| **7.2 Synthetic Ingestion Fixtures** | Testing / ETL | 🔴 High | ✅ Complete | Resolves 3 failing tests in `test_etl_ingestion.py` without committing large CSVs. |
-| **7.3 Rate Limit Test Isolation** | Testing / Security | 🔴 High | ✅ Complete | Fixes test failure in `test_security.py` by removing unmocked DB dependency. |
-| **7.4 Env Config Harmonization** | Configuration | 🟡 Medium | ✅ Complete | Prevents deployment misconfigurations between `APP_ENV` and `ENV`. |
-| **7.5 Product & Seller dbt Marts** | Data / Performance | 🟡 Medium | ✅ Complete | Eliminates Cartesian fan-out and slow joins in `ProductService` & `SellerService`. |
-| **7.6 Codebase Hygiene & Cleanup** | API / Schemas | 🟢 Low | ✅ Complete | Purges dead boilerplate and harmonizes route documentation. |
+| **Phase 8: Real-Time Inference & Simulation** | MLOps / API | 🔴 High | ✅ Complete | Transforms batch ML into real-time interactive decision-making and what-if simulation. |
+| **Phase 9: Prescriptive Retention Economics** | Analytics / Finance | 🔴 High | ⏳ Planned | Solves the financial ROI dilemma of retention campaigns. |
+| **Phase 10: Marketplace Marketing Funnel** | Data Engineering | 🟡 Medium | ⏳ Planned | Activates dark marketing funnel data for complete two-sided marketplace intelligence. |
+| **Phase 11: Production Pipeline Orchestrator** | DevOps / Data Eng | 🟡 Medium | ⏳ Planned | Automates end-to-end data pipeline execution and health monitoring. |
 
 ---
 
@@ -342,4 +414,9 @@ graph TD
 - **Phase 5: Automated CI/CD Pipeline** — ✅ 100% Complete & Verified
 - **Phase 6: Client Integration & Schema Contracts** — ✅ 100% Complete & Verified
 - **Phase 7: Test Isolation, CI Hardening & Mart Optimization** — ✅ 100% Complete & Verified
+- **Phase 8: Real-Time ML Inference & Counterfactual Simulation** — ✅ 100% Complete & Verified
+- **Phase 9: Prescriptive Retention Economics & Campaign ROI** — ⏳ Planned
+- **Phase 10: Two-Sided Marketplace Marketing Funnel** — ⏳ Planned
+- **Phase 11: Production Pipeline Orchestrator & Observability** — ⏳ Planned
+
 

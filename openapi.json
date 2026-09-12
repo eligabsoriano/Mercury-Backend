@@ -159,6 +159,413 @@
         "title": "ChurnPrediction",
         "type": "object"
       },
+      "ChurnPredictionInput": {
+        "description": "Input feature payload for real-time churn prediction.\nKey operational levers have sensible default baselines so clients can\nsupply partial feature subsets (e.g. from UI sliders) without manual imputation.",
+        "properties": {
+          "avg_delivery_delay_days": {
+            "default": 0.0,
+            "description": "Average carrier delivery delay in days (+ = late, - = ahead of estimate)",
+            "title": "Avg Delivery Delay Days",
+            "type": "number"
+          },
+          "avg_items_per_order": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1.0,
+            "description": "Average number of items per delivered order",
+            "title": "Avg Items Per Order"
+          },
+          "avg_order_value": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 150.0,
+            "description": "Average order value across delivered purchases (BRL)",
+            "title": "Avg Order Value"
+          },
+          "avg_review_score": {
+            "default": 4.0,
+            "description": "Mean star rating given across review surveys (1 to 5)",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Avg Review Score",
+            "type": "number"
+          },
+          "customer_lifespan_days": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 120.0,
+            "description": "Customer tenure in days between first and last purchase",
+            "title": "Customer Lifespan Days"
+          },
+          "f_score": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "RFM Frequency quintile score (1 to 5)",
+            "title": "F Score"
+          },
+          "freight_ratio": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0.1333,
+            "description": "Freight fees as fraction of total lifetime spend",
+            "title": "Freight Ratio"
+          },
+          "has_late_delivery": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Binary flag indicating whether any order was late",
+            "title": "Has Late Delivery"
+          },
+          "has_negative_review": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Binary flag indicating whether customer submitted 1-2 star reviews",
+            "title": "Has Negative Review"
+          },
+          "is_repeat_buyer": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Binary flag indicating >= 2 lifetime orders",
+            "title": "Is Repeat Buyer"
+          },
+          "late_order_ratio": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0.0,
+            "description": "Proportion of orders delivered late",
+            "title": "Late Order Ratio"
+          },
+          "late_orders_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Total number of orders delivered past estimated date",
+            "title": "Late Orders Count"
+          },
+          "lifetime_freight_spend": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 20.0,
+            "description": "Total freight shipping expenditure (BRL)",
+            "title": "Lifetime Freight Spend"
+          },
+          "lifetime_items": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "Total product line items purchased",
+            "title": "Lifetime Items"
+          },
+          "lifetime_orders": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "Total count of delivered orders placed",
+            "title": "Lifetime Orders"
+          },
+          "lifetime_product_spend": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 130.0,
+            "description": "Total expenditure on product items excluding freight (BRL)",
+            "title": "Lifetime Product Spend"
+          },
+          "lifetime_spend": {
+            "default": 150.0,
+            "description": "Total gross expenditure including items and freight (BRL)",
+            "minimum": 0.0,
+            "title": "Lifetime Spend",
+            "type": "number"
+          },
+          "m_score": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 3,
+            "description": "RFM Monetary quintile score (1 to 5)",
+            "title": "M Score"
+          },
+          "max_delivery_delay_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0.0,
+            "description": "Maximum single-order delivery delay in days",
+            "title": "Max Delivery Delay Days"
+          },
+          "negative_review_ratio": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0.0,
+            "description": "Ratio of negative reviews to total reviews",
+            "title": "Negative Review Ratio"
+          },
+          "negative_reviews_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "description": "Count of reviews rated 1 or 2 stars",
+            "title": "Negative Reviews Count"
+          },
+          "positive_reviews_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "Count of reviews rated 4 or 5 stars",
+            "title": "Positive Reviews Count"
+          },
+          "segment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "New Customers",
+            "description": "RFM customer segment name",
+            "title": "Segment"
+          },
+          "total_reviews_submitted": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "Total customer satisfaction surveys submitted",
+            "title": "Total Reviews Submitted"
+          },
+          "total_unique_products_purchased": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "Distinct product catalog IDs purchased",
+            "title": "Total Unique Products Purchased"
+          },
+          "total_unique_sellers_contacted": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "Distinct merchant sellers purchased from",
+            "title": "Total Unique Sellers Contacted"
+          }
+        },
+        "title": "ChurnPredictionInput",
+        "type": "object"
+      },
+      "ChurnPredictionResult": {
+        "description": "Comprehensive real-time churn prediction response with financial exposure.",
+        "properties": {
+          "churn_probability": {
+            "description": "Predicted churn probability P(Churn) in [0.0000, 1.0000]",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Churn Probability",
+            "type": "number"
+          },
+          "monetary_value": {
+            "description": "Customer lifetime spend evaluated (BRL)",
+            "minimum": 0.0,
+            "title": "Monetary Value",
+            "type": "number"
+          },
+          "retention_priority": {
+            "description": "Action priority from the Decision Matrix (Priority 1 through 4)",
+            "title": "Retention Priority",
+            "type": "string"
+          },
+          "revenue_at_risk": {
+            "description": "Expected financial exposure = P(Churn) * monetary_value (BRL)",
+            "minimum": 0.0,
+            "title": "Revenue At Risk",
+            "type": "number"
+          },
+          "risk_tier": {
+            "description": "Risk tier: High (>=0.70), Medium (0.30-0.70), Low (<0.30)",
+            "title": "Risk Tier",
+            "type": "string"
+          },
+          "top_feature_contributions": {
+            "description": "Top positive and negative risk contributors",
+            "items": {
+              "$ref": "#/components/schemas/FeatureContribution"
+            },
+            "title": "Top Feature Contributions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "churn_probability",
+          "risk_tier",
+          "monetary_value",
+          "revenue_at_risk",
+          "retention_priority"
+        ],
+        "title": "ChurnPredictionResult",
+        "type": "object"
+      },
       "CohortRetentionPoint": {
         "description": "Customer cohort retention rates over month-by-month survival lifecycle.",
         "properties": {
@@ -187,6 +594,105 @@
           "retention_rates"
         ],
         "title": "CohortRetentionPoint",
+        "type": "object"
+      },
+      "CounterfactualSimulationRequest": {
+        "description": "Request schema for simulating 'what-if' operational adjustments against a customer baseline.\nProvide either an inline `base_features` payload or a `customer_unique_id` to hydrate from DB.",
+        "properties": {
+          "adjustments": {
+            "description": "Key-value dictionary of operational adjustments to simulate. Example: {'avg_delivery_delay_days': 0.0, 'avg_review_score': 5.0}",
+            "title": "Adjustments",
+            "type": "object"
+          },
+          "base_features": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChurnPredictionInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Baseline feature payload. If omitted, customer_unique_id must be provided."
+          },
+          "customer_unique_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional customer unique ID to hydrate baseline features from DB",
+            "title": "Customer Unique Id"
+          }
+        },
+        "required": [
+          "adjustments"
+        ],
+        "title": "CounterfactualSimulationRequest",
+        "type": "object"
+      },
+      "CounterfactualSimulationResponse": {
+        "description": "Comparative outcome delta showing before-and-after simulation metrics.",
+        "properties": {
+          "baseline": {
+            "$ref": "#/components/schemas/ChurnPredictionResult",
+            "description": "Baseline prediction before applying adjustments"
+          },
+          "customer_unique_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Customer unique ID if hydrated from database",
+            "title": "Customer Unique Id"
+          },
+          "delta_churn_probability": {
+            "description": "Change in P(Churn): simulated - baseline (negative = risk reduction)",
+            "title": "Delta Churn Probability",
+            "type": "number"
+          },
+          "delta_revenue_at_risk": {
+            "description": "Change in Revenue at Risk: simulated - baseline (negative = financial savings)",
+            "title": "Delta Revenue At Risk",
+            "type": "number"
+          },
+          "impact_summary": {
+            "description": "Natural-language executive summary of the simulated intervention",
+            "title": "Impact Summary",
+            "type": "string"
+          },
+          "retention_priority_transition": {
+            "description": "Retention priority transition indicator (e.g. 'Priority 1 -> Priority 2')",
+            "title": "Retention Priority Transition",
+            "type": "string"
+          },
+          "risk_tier_transition": {
+            "description": "Risk tier transition indicator (e.g. 'High -> Medium')",
+            "title": "Risk Tier Transition",
+            "type": "string"
+          },
+          "simulated": {
+            "$ref": "#/components/schemas/ChurnPredictionResult",
+            "description": "Simulated prediction after applying adjustments"
+          }
+        },
+        "required": [
+          "baseline",
+          "simulated",
+          "delta_churn_probability",
+          "delta_revenue_at_risk",
+          "risk_tier_transition",
+          "retention_priority_transition",
+          "impact_summary"
+        ],
+        "title": "CounterfactualSimulationResponse",
         "type": "object"
       },
       "CustomerBasketMetrics": {
@@ -712,6 +1218,38 @@
         "title": "CustomerSummary",
         "type": "object"
       },
+      "FeatureContribution": {
+        "description": "Explains an individual feature's impact on the churn probability prediction.",
+        "properties": {
+          "description": {
+            "description": "Human-readable explanation of risk influence",
+            "title": "Description",
+            "type": "string"
+          },
+          "direction": {
+            "description": "Direction of impact: 'increases_risk', 'decreases_risk', or 'neutral'",
+            "title": "Direction",
+            "type": "string"
+          },
+          "feature": {
+            "description": "Feature column identifier",
+            "title": "Feature",
+            "type": "string"
+          },
+          "value": {
+            "description": "Input feature value evaluated",
+            "title": "Value"
+          }
+        },
+        "required": [
+          "feature",
+          "value",
+          "direction",
+          "description"
+        ],
+        "title": "FeatureContribution",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -762,6 +1300,66 @@
           "timestamp"
         ],
         "title": "HealthResponse",
+        "type": "object"
+      },
+      "ModelMetadataResponse": {
+        "description": "Metadata, feature schema, and evaluation metrics for the active serving model.",
+        "properties": {
+          "categorical_features": {
+            "description": "List of categorical feature column names",
+            "items": {
+              "type": "string"
+            },
+            "title": "Categorical Features",
+            "type": "array"
+          },
+          "eval_metrics": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Test cohort evaluation metrics (ROC-AUC, PR-AUC, F1, Precision, Recall, P@10%)",
+            "title": "Eval Metrics",
+            "type": "object"
+          },
+          "model_name": {
+            "description": "Active machine-learning classifier algorithm",
+            "title": "Model Name",
+            "type": "string"
+          },
+          "numeric_features": {
+            "description": "List of numeric feature column names",
+            "items": {
+              "type": "string"
+            },
+            "title": "Numeric Features",
+            "type": "array"
+          },
+          "trained_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Timestamp when model artifact was serialized",
+            "title": "Trained At"
+          },
+          "window_days": {
+            "description": "Time-bounded churn window in days (default 90)",
+            "title": "Window Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model_name",
+          "window_days",
+          "numeric_features",
+          "categorical_features",
+          "eval_metrics"
+        ],
+        "title": "ModelMetadataResponse",
         "type": "object"
       },
       "PaginationMeta": {
@@ -3160,6 +3758,233 @@
         ]
       }
     },
+    "/api/predictions/churn": {
+      "post": {
+        "description": "Score customer behavioral features in real time using the active trained ML pipeline. Returns predicted churn probability P(Churn), risk tier, monetary value, revenue at risk, and top feature contribution factors.",
+        "operationId": "predict_churn_api_predictions_churn_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChurnPredictionInput",
+                "description": "Customer behavioral and transactional features to score",
+                "examples": [
+                  {
+                    "avg_delivery_delay_days": 4.5,
+                    "avg_review_score": 2.0,
+                    "lifetime_orders": 2,
+                    "lifetime_spend": 320.5,
+                    "segment": "At Risk"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChurnPredictionResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Real-Time Churn Prediction",
+        "tags": [
+          "Predictions"
+        ]
+      }
+    },
+    "/api/predictions/churn/simulate": {
+      "post": {
+        "description": "Simulate operational interventions (e.g. carrier expediting, satisfaction recovery) against an arbitrary customer baseline. Returns before-and-after metrics, probability deltas, saved revenue at risk, and risk tier transitions.",
+        "operationId": "simulate_counterfactual_api_predictions_churn_simulate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CounterfactualSimulationRequest",
+                "description": "Baseline feature payload (or customer ID) with operational adjustments to evaluate",
+                "examples": [
+                  {
+                    "adjustments": {
+                      "avg_delivery_delay_days": 0.0,
+                      "avg_review_score": 5.0
+                    },
+                    "base_features": {
+                      "avg_delivery_delay_days": 7.0,
+                      "avg_review_score": 2.0,
+                      "lifetime_orders": 2,
+                      "lifetime_spend": 450.0,
+                      "segment": "At Risk"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CounterfactualSimulationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Counterfactual 'What-If' Simulation",
+        "tags": [
+          "Predictions"
+        ]
+      }
+    },
+    "/api/predictions/churn/simulate/{customer_unique_id}": {
+      "post": {
+        "description": "Hydrate baseline features for an existing customer from mart.mart_customer_metrics, apply operational adjustments (e.g. expediting delivery or upgrading review score), and calculate exact churn reduction and protected revenue.",
+        "operationId": "simulate_customer_counterfactual_api_predictions_churn_simulate__customer_unique_id__post",
+        "parameters": [
+          {
+            "description": "Unique customer identifier (customer_unique_id)",
+            "in": "path",
+            "name": "customer_unique_id",
+            "required": true,
+            "schema": {
+              "description": "Unique customer identifier (customer_unique_id)",
+              "title": "Customer Unique Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "Key-value dictionary of feature adjustments to simulate",
+                "examples": [
+                  {
+                    "avg_delivery_delay_days": 0.0,
+                    "avg_review_score": 4.5
+                  }
+                ],
+                "title": "Adjustments",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CounterfactualSimulationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Customer-Specific Counterfactual Simulation",
+        "tags": [
+          "Predictions"
+        ]
+      }
+    },
+    "/api/predictions/model/info": {
+      "get": {
+        "description": "Retrieve runtime metadata, feature lists, training timestamp, and test cohort evaluation metrics (ROC-AUC, PR-AUC, F1-Score, Precision, Recall, Precision@Top 10%) for the active serving model.",
+        "operationId": "get_model_info_api_predictions_model_info_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelMetadataResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Model Runtime Metadata & Metrics",
+        "tags": [
+          "Predictions"
+        ]
+      }
+    },
     "/api/products": {
       "get": {
         "description": "Returns a paginated list of catalog products with sales volume, total revenue, average unit price, customer review ratings, and package specifications.",
@@ -3673,6 +4498,10 @@
     {
       "description": "Marketplace seller performance scorecards, delivery delay rates, and seller directories.",
       "name": "Sellers"
+    },
+    {
+      "description": "Real-time ML churn scoring, counterfactual 'what-if' simulations, and model transparency.",
+      "name": "Predictions"
     },
     {
       "description": "System health and database connectivity diagnostics.",

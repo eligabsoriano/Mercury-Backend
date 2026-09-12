@@ -22,6 +22,7 @@ from backend.routers import (
     auth_router,
     customers_router,
     health_router,
+    predictions_router,
     products_router,
     sellers_router,
 )
@@ -82,6 +83,10 @@ app = FastAPI(
             "description": "Marketplace seller performance scorecards, delivery delay rates, and seller directories.",
         },
         {
+            "name": "Predictions",
+            "description": "Real-time ML churn scoring, counterfactual 'what-if' simulations, and model transparency.",
+        },
+        {
             "name": "Health",
             "description": "System health and database connectivity diagnostics.",
         },
@@ -105,6 +110,7 @@ app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(analytics_router)
 app.include_router(customers_router)
+app.include_router(predictions_router)
 app.include_router(products_router)
 app.include_router(sellers_router)
 
@@ -134,6 +140,9 @@ def root_index() -> JSONResponse:
                 "customers": "/api/customers",
                 "at_risk_queue": "/api/customers/at-risk",
                 "customer_export": "/api/customers/export",
+                "predict_churn": "/api/predictions/churn",
+                "simulate_churn": "/api/predictions/churn/simulate",
+                "model_info": "/api/predictions/model/info",
                 "products": "/api/products",
                 "product_categories": "/api/products/categories",
                 "sellers": "/api/sellers",

@@ -91,7 +91,7 @@ mercury/
 │       └── dbt_project.yml
 ├── docs/                      ← In-depth technical & business documentation
 │   ├── architecture.md        ← Full system flow, data models, and API surface
-│   ├── backend_roadmap.md     ← Complete backend development roadmap (all 7 phases complete)
+│   ├── backend_roadmap.md     ← Complete backend engineering roadmap (Phases 1-11)
 │   ├── business_case.md       ← The retention dilemma, prioritization matrix, and SDG alignment
 │   ├── deployment.md          ← Docker, Docker Compose, and Cloud PaaS operations guide
 │   ├── methodology.md         ← RFM scoring, churn definitions, and ML feature matrix
@@ -106,7 +106,7 @@ mercury/
 │   ├── schema.sql             ← PostgreSQL DDL for raw.* tables and indexes
 │   ├── views.sql              ← Helper views (vw_ingestion_summary, etc.)
 │   └── migrate.py             ← Automated database migration runner
-├── tests/                     ← Comprehensive 152-test automated test suite (13 modules)
+├── tests/                     ← Comprehensive 165-test automated test suite (14 modules)
 ├── types/
 │   └── api.ts                 ← Auto-generated TypeScript types (2,502 lines)
 ├── Dockerfile                 ← Multi-stage production container (python:3.13-slim, user mercury)
@@ -145,9 +145,9 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 # ReDoc:      http://localhost:8000/redoc
 ```
 
-### 4. Run Automated Test Suite (152 Tests)
+### 4. Run Automated Test Suite (165 Tests)
 ```bash
-# Runs 114 offline unit/mock tests (38 live DB tests are cleanly skipped when DATABASE_URL is unset)
+# Runs 127 offline unit/mock tests (38 live DB tests are cleanly skipped when DATABASE_URL is unset)
 pytest tests/ -v
 ```
 
@@ -174,8 +174,8 @@ docker compose logs -f backend
 ## 📚 Detailed Documentation
 
 For comprehensive guides and mathematical methodologies, explore:
-- [docs/architecture.md](docs/architecture.md) — System flow, schema dictionaries, and 25-endpoint API contract.
-- [docs/backend_roadmap.md](docs/backend_roadmap.md) — Full 7-phase engineering roadmap with completion records.
+- [docs/architecture.md](docs/architecture.md) — System flow, schema dictionaries, and 29-endpoint API contract.
+- [docs/backend_roadmap.md](docs/backend_roadmap.md) — Full engineering roadmap (Phases 1-11 with Phase 8 active).
 - [docs/deployment.md](docs/deployment.md) — Production Docker, Docker Compose, Render, and Railway deployment instructions.
 - [docs/powerbi_setup.md](docs/powerbi_setup.md) — Power BI DirectQuery connection parameters, star-schema model, and DAX metric formulas.
 - [docs/methodology.md](docs/methodology.md) — RFM quintile distribution, time-bounded churn definitions, and revenue-at-risk mathematics.

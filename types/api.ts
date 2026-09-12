@@ -384,6 +384,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/predictions/churn": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Real-Time Churn Prediction
+         * @description Score customer behavioral features in real time using the active trained ML pipeline. Returns predicted churn probability P(Churn), risk tier, monetary value, revenue at risk, and top feature contribution factors.
+         */
+        post: operations["predict_churn_api_predictions_churn_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/predictions/churn/simulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Counterfactual 'What-If' Simulation
+         * @description Simulate operational interventions (e.g. carrier expediting, satisfaction recovery) against an arbitrary customer baseline. Returns before-and-after metrics, probability deltas, saved revenue at risk, and risk tier transitions.
+         */
+        post: operations["simulate_counterfactual_api_predictions_churn_simulate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/predictions/churn/simulate/{customer_unique_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Customer-Specific Counterfactual Simulation
+         * @description Hydrate baseline features for an existing customer from mart.mart_customer_metrics, apply operational adjustments (e.g. expediting delivery or upgrading review score), and calculate exact churn reduction and protected revenue.
+         */
+        post: operations["simulate_customer_counterfactual_api_predictions_churn_simulate__customer_unique_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/predictions/model/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Model Runtime Metadata & Metrics
+         * @description Retrieve runtime metadata, feature lists, training timestamp, and test cohort evaluation metrics (ROC-AUC, PR-AUC, F1-Score, Precision, Recall, Precision@Top 10%) for the active serving model.
+         */
+        get: operations["get_model_info_api_predictions_model_info_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/products": {
         parameters: {
             query?: never;
@@ -612,6 +692,206 @@ export interface components {
             risk_tier: string;
         };
         /**
+         * ChurnPredictionInput
+         * @description Input feature payload for real-time churn prediction.
+         *     Key operational levers have sensible default baselines so clients can
+         *     supply partial feature subsets (e.g. from UI sliders) without manual imputation.
+         */
+        ChurnPredictionInput: {
+            /**
+             * Avg Delivery Delay Days
+             * @description Average carrier delivery delay in days (+ = late, - = ahead of estimate)
+             * @default 0
+             */
+            avg_delivery_delay_days: number;
+            /**
+             * Avg Items Per Order
+             * @description Average number of items per delivered order
+             * @default 1
+             */
+            avg_items_per_order: number | null;
+            /**
+             * Avg Order Value
+             * @description Average order value across delivered purchases (BRL)
+             * @default 150
+             */
+            avg_order_value: number | null;
+            /**
+             * Avg Review Score
+             * @description Mean star rating given across review surveys (1 to 5)
+             * @default 4
+             */
+            avg_review_score: number;
+            /**
+             * Customer Lifespan Days
+             * @description Customer tenure in days between first and last purchase
+             * @default 120
+             */
+            customer_lifespan_days: number | null;
+            /**
+             * F Score
+             * @description RFM Frequency quintile score (1 to 5)
+             * @default 1
+             */
+            f_score: number | null;
+            /**
+             * Freight Ratio
+             * @description Freight fees as fraction of total lifetime spend
+             * @default 0.1333
+             */
+            freight_ratio: number | null;
+            /**
+             * Has Late Delivery
+             * @description Binary flag indicating whether any order was late
+             * @default 0
+             */
+            has_late_delivery: number | null;
+            /**
+             * Has Negative Review
+             * @description Binary flag indicating whether customer submitted 1-2 star reviews
+             * @default 0
+             */
+            has_negative_review: number | null;
+            /**
+             * Is Repeat Buyer
+             * @description Binary flag indicating >= 2 lifetime orders
+             * @default 0
+             */
+            is_repeat_buyer: number | null;
+            /**
+             * Late Order Ratio
+             * @description Proportion of orders delivered late
+             * @default 0
+             */
+            late_order_ratio: number | null;
+            /**
+             * Late Orders Count
+             * @description Total number of orders delivered past estimated date
+             * @default 0
+             */
+            late_orders_count: number | null;
+            /**
+             * Lifetime Freight Spend
+             * @description Total freight shipping expenditure (BRL)
+             * @default 20
+             */
+            lifetime_freight_spend: number | null;
+            /**
+             * Lifetime Items
+             * @description Total product line items purchased
+             * @default 1
+             */
+            lifetime_items: number | null;
+            /**
+             * Lifetime Orders
+             * @description Total count of delivered orders placed
+             * @default 1
+             */
+            lifetime_orders: number | null;
+            /**
+             * Lifetime Product Spend
+             * @description Total expenditure on product items excluding freight (BRL)
+             * @default 130
+             */
+            lifetime_product_spend: number | null;
+            /**
+             * Lifetime Spend
+             * @description Total gross expenditure including items and freight (BRL)
+             * @default 150
+             */
+            lifetime_spend: number;
+            /**
+             * M Score
+             * @description RFM Monetary quintile score (1 to 5)
+             * @default 3
+             */
+            m_score: number | null;
+            /**
+             * Max Delivery Delay Days
+             * @description Maximum single-order delivery delay in days
+             * @default 0
+             */
+            max_delivery_delay_days: number | null;
+            /**
+             * Negative Review Ratio
+             * @description Ratio of negative reviews to total reviews
+             * @default 0
+             */
+            negative_review_ratio: number | null;
+            /**
+             * Negative Reviews Count
+             * @description Count of reviews rated 1 or 2 stars
+             * @default 0
+             */
+            negative_reviews_count: number | null;
+            /**
+             * Positive Reviews Count
+             * @description Count of reviews rated 4 or 5 stars
+             * @default 1
+             */
+            positive_reviews_count: number | null;
+            /**
+             * Segment
+             * @description RFM customer segment name
+             * @default New Customers
+             */
+            segment: string | null;
+            /**
+             * Total Reviews Submitted
+             * @description Total customer satisfaction surveys submitted
+             * @default 1
+             */
+            total_reviews_submitted: number | null;
+            /**
+             * Total Unique Products Purchased
+             * @description Distinct product catalog IDs purchased
+             * @default 1
+             */
+            total_unique_products_purchased: number | null;
+            /**
+             * Total Unique Sellers Contacted
+             * @description Distinct merchant sellers purchased from
+             * @default 1
+             */
+            total_unique_sellers_contacted: number | null;
+        };
+        /**
+         * ChurnPredictionResult
+         * @description Comprehensive real-time churn prediction response with financial exposure.
+         */
+        ChurnPredictionResult: {
+            /**
+             * Churn Probability
+             * @description Predicted churn probability P(Churn) in [0.0000, 1.0000]
+             */
+            churn_probability: number;
+            /**
+             * Monetary Value
+             * @description Customer lifetime spend evaluated (BRL)
+             */
+            monetary_value: number;
+            /**
+             * Retention Priority
+             * @description Action priority from the Decision Matrix (Priority 1 through 4)
+             */
+            retention_priority: string;
+            /**
+             * Revenue At Risk
+             * @description Expected financial exposure = P(Churn) * monetary_value (BRL)
+             */
+            revenue_at_risk: number;
+            /**
+             * Risk Tier
+             * @description Risk tier: High (>=0.70), Medium (0.30-0.70), Low (<0.30)
+             */
+            risk_tier: string;
+            /**
+             * Top Feature Contributions
+             * @description Top positive and negative risk contributors
+             */
+            top_feature_contributions?: components["schemas"]["FeatureContribution"][];
+        };
+        /**
          * CohortRetentionPoint
          * @description Customer cohort retention rates over month-by-month survival lifecycle.
          */
@@ -633,6 +913,65 @@ export interface components {
             retention_rates: {
                 [key: string]: number;
             };
+        };
+        /**
+         * CounterfactualSimulationRequest
+         * @description Request schema for simulating 'what-if' operational adjustments against a customer baseline.
+         *     Provide either an inline `base_features` payload or a `customer_unique_id` to hydrate from DB.
+         */
+        CounterfactualSimulationRequest: {
+            /**
+             * Adjustments
+             * @description Key-value dictionary of operational adjustments to simulate. Example: {'avg_delivery_delay_days': 0.0, 'avg_review_score': 5.0}
+             */
+            adjustments: Record<string, never>;
+            /** @description Baseline feature payload. If omitted, customer_unique_id must be provided. */
+            base_features?: components["schemas"]["ChurnPredictionInput"] | null;
+            /**
+             * Customer Unique Id
+             * @description Optional customer unique ID to hydrate baseline features from DB
+             */
+            customer_unique_id?: string | null;
+        };
+        /**
+         * CounterfactualSimulationResponse
+         * @description Comparative outcome delta showing before-and-after simulation metrics.
+         */
+        CounterfactualSimulationResponse: {
+            /** @description Baseline prediction before applying adjustments */
+            baseline: components["schemas"]["ChurnPredictionResult"];
+            /**
+             * Customer Unique Id
+             * @description Customer unique ID if hydrated from database
+             */
+            customer_unique_id?: string | null;
+            /**
+             * Delta Churn Probability
+             * @description Change in P(Churn): simulated - baseline (negative = risk reduction)
+             */
+            delta_churn_probability: number;
+            /**
+             * Delta Revenue At Risk
+             * @description Change in Revenue at Risk: simulated - baseline (negative = financial savings)
+             */
+            delta_revenue_at_risk: number;
+            /**
+             * Impact Summary
+             * @description Natural-language executive summary of the simulated intervention
+             */
+            impact_summary: string;
+            /**
+             * Retention Priority Transition
+             * @description Retention priority transition indicator (e.g. 'Priority 1 -> Priority 2')
+             */
+            retention_priority_transition: string;
+            /**
+             * Risk Tier Transition
+             * @description Risk tier transition indicator (e.g. 'High -> Medium')
+             */
+            risk_tier_transition: string;
+            /** @description Simulated prediction after applying adjustments */
+            simulated: components["schemas"]["ChurnPredictionResult"];
         };
         /**
          * CustomerBasketMetrics
@@ -931,6 +1270,32 @@ export interface components {
              */
             zip_prefix?: string | null;
         };
+        /**
+         * FeatureContribution
+         * @description Explains an individual feature's impact on the churn probability prediction.
+         */
+        FeatureContribution: {
+            /**
+             * Description
+             * @description Human-readable explanation of risk influence
+             */
+            description: string;
+            /**
+             * Direction
+             * @description Direction of impact: 'increases_risk', 'decreases_risk', or 'neutral'
+             */
+            direction: string;
+            /**
+             * Feature
+             * @description Feature column identifier
+             */
+            feature: string;
+            /**
+             * Value
+             * @description Input feature value evaluated
+             */
+            value: unknown;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -966,6 +1331,44 @@ export interface components {
              * @description Current service release version
              */
             version: string;
+        };
+        /**
+         * ModelMetadataResponse
+         * @description Metadata, feature schema, and evaluation metrics for the active serving model.
+         */
+        ModelMetadataResponse: {
+            /**
+             * Categorical Features
+             * @description List of categorical feature column names
+             */
+            categorical_features: string[];
+            /**
+             * Eval Metrics
+             * @description Test cohort evaluation metrics (ROC-AUC, PR-AUC, F1, Precision, Recall, P@10%)
+             */
+            eval_metrics: {
+                [key: string]: number;
+            };
+            /**
+             * Model Name
+             * @description Active machine-learning classifier algorithm
+             */
+            model_name: string;
+            /**
+             * Numeric Features
+             * @description List of numeric feature column names
+             */
+            numeric_features: string[];
+            /**
+             * Trained At
+             * @description Timestamp when model artifact was serialized
+             */
+            trained_at?: string | null;
+            /**
+             * Window Days
+             * @description Time-bounded churn window in days (default 90)
+             */
+            window_days: number;
         };
         /**
          * PaginationMeta
@@ -2286,6 +2689,128 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    predict_churn_api_predictions_churn_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChurnPredictionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChurnPredictionResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulate_counterfactual_api_predictions_churn_simulate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CounterfactualSimulationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CounterfactualSimulationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulate_customer_counterfactual_api_predictions_churn_simulate__customer_unique_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Unique customer identifier (customer_unique_id) */
+                customer_unique_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CounterfactualSimulationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_model_info_api_predictions_model_info_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelMetadataResponse"];
                 };
             };
         };
