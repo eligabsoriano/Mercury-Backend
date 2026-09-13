@@ -63,9 +63,13 @@ class RequestTracingAndSecurityMiddleware(BaseHTTPMiddleware):
         client_ip = get_client_ip(request)
         start_time = time.perf_counter()
 
-        # 2. Rate Limiting Check
+        # 2. Rate Limiting Check (OPTIONS preflight requests are always exempt to prevent CORS breaks)
         req_settings = get_settings()
-        if req_settings.rate_limit_enabled and not is_rate_limit_exempt(request.url.path):
+        if (
+            req_settings.rate_limit_enabled
+            and request.method != "OPTIONS"
+            and not is_rate_limit_exempt(request.url.path)
+        ):
             allowed, remaining, retry_after = rate_limiter.is_allowed(
                 client_ip,
                 limit=req_settings.rate_limit_requests_per_minute,

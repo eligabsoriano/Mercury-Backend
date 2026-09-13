@@ -71,10 +71,10 @@ class TestPredictionService:
         service = PredictionService.get_instance()
         base = {
             "lifetime_spend": 500.0,
-            "lifetime_orders": 1,
+            "lifetime_orders": 2,
             "avg_delivery_delay_days": 7.0,
             "avg_review_score": 2.0,
-            "segment": "At Risk",
+            "segment": "Potential Loyalists",
         }
         adjustments = {
             "avg_delivery_delay_days": 0.0,
@@ -152,10 +152,10 @@ class TestPredictionAPI:
         payload = {
             "base_features": {
                 "lifetime_spend": 400.0,
-                "lifetime_orders": 1,
+                "lifetime_orders": 2,
                 "avg_delivery_delay_days": 6.0,
                 "avg_review_score": 2.0,
-                "segment": "At Risk",
+                "segment": "Potential Loyalists",
             },
             "adjustments": {
                 "avg_delivery_delay_days": 0.0,
@@ -173,17 +173,19 @@ class TestPredictionAPI:
         assert "impact_summary" in data
 
     def test_post_simulate_customer_by_path_param_success(self):
+        list_res = client.get("/api/customers?page_size=1")
+        customer_id = list_res.json()["items"][0]["customer_unique_id"]
         payload = {
             "avg_delivery_delay_days": 0.0,
             "avg_review_score": 5.0,
         }
         response = client.post(
-            "/api/predictions/churn/simulate/test_cust_001",
+            f"/api/predictions/churn/simulate/{customer_id}",
             json=payload,
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["customer_unique_id"] == "test_cust_001"
+        assert data["customer_unique_id"] == customer_id
         assert "baseline" in data
         assert "simulated" in data
         assert "delta_churn_probability" in data

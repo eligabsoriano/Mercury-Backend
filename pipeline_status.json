@@ -1,48 +1,18 @@
 {
-  "run_id": "run_20260913_103555_252a12",
+  "run_id": "run_20260913_105544_bbc0f2",
   "status": "success",
-  "start_time": "2026-09-13T10:35:55.265148+00:00",
-  "end_time": "2026-09-13T10:35:55.265207+00:00",
-  "duration_seconds": 0.0,
-  "dry_run": true,
+  "start_time": "2026-09-13T10:55:44.930638+00:00",
+  "end_time": "2026-09-13T10:55:51.474012+00:00",
+  "duration_seconds": 6.543,
+  "dry_run": false,
   "steps_executed": [
-    "db_check",
-    "ingest",
-    "dbt",
-    "rfm",
-    "churn",
-    "codegen"
+    "db_check"
   ],
   "step_results": {
     "db_check": {
       "success": true,
-      "duration_seconds": 0.0,
-      "message": "DATABASE_URL is unset (dry-run mode)"
-    },
-    "ingest": {
-      "success": true,
-      "duration_seconds": 0.01,
-      "message": "Dry-run: verified etl/ingest.py path and candidate dataset directories"
-    },
-    "dbt": {
-      "success": true,
-      "duration_seconds": 0.01,
-      "message": "Dry-run: verified dbt project in /Users/gab/Documents/GitHub/Mercury-Backend/dbt/mercury_analytics"
-    },
-    "rfm": {
-      "success": true,
-      "duration_seconds": 0.01,
-      "message": "Dry-run: verified ml/rfm.py with 90-day window"
-    },
-    "churn": {
-      "success": true,
-      "duration_seconds": 0.01,
-      "message": "Dry-run: verified ml/churn.py with 90-day window"
-    },
-    "codegen": {
-      "success": true,
-      "duration_seconds": 0.01,
-      "message": "Dry-run: verified scripts/export_openapi.py"
+      "duration_seconds": 6.542,
+      "message": "Database connected (6339.2ms latency)"
     }
   }
 }

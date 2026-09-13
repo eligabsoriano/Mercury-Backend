@@ -98,7 +98,9 @@ class CustomerService:
             params["max_spend"] = max_spend
 
         if search:
-            conditions.append("c.customer_unique_id LIKE :search")
+            conditions.append(
+                "(c.customer_unique_id ILIKE :search OR c.city ILIKE :search OR c.state ILIKE :search)"
+            )
             params["search"] = f"%{search.strip()}%"
 
         where_clause = " AND ".join(conditions)

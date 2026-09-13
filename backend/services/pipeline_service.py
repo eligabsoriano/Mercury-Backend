@@ -136,7 +136,7 @@ def _get_table_counts(db: Session) -> TableCountMetrics:
 
 def _get_last_order_timestamp(db: Session) -> Optional[str]:
     """Retrieve the latest order timestamp from mart.fact_orders or raw.orders."""
-    query = text("SELECT MAX(order_purchase_timestamp) AS max_ts FROM mart.fact_orders;")
+    query = text("SELECT MAX(purchased_at) AS max_ts FROM mart.fact_orders;")
     try:
         val = db.execute(query).scalar()
         if val is not None:

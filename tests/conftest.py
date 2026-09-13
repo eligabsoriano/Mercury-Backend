@@ -533,7 +533,7 @@ class MockSession:
             )
             return MockResult([row])
 
-        if "SELECT MAX(order_purchase_timestamp)" in sql:
+        if "SELECT MAX(purchased_at)" in sql or "SELECT MAX(order_purchase_timestamp)" in sql:
             return MockResult(
                 [MockRow({"max_ts": "2018-10-17 17:30:18"})], scalar_val="2018-10-17 17:30:18"
             )

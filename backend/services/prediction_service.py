@@ -509,7 +509,7 @@ class PredictionService:
                 c.lifetime_spend,
                 c.lifetime_product_spend,
                 c.lifetime_freight_spend,
-                c.freight_ratio,
+                COALESCE(ROUND((c.lifetime_freight_spend / NULLIF(c.lifetime_spend, 0.0))::NUMERIC, 4), 0.0) AS freight_ratio,
                 c.avg_order_value,
                 c.lifetime_items,
                 c.avg_items_per_order,

@@ -128,6 +128,22 @@ def test_exempt_paths_not_rate_limited() -> None:
             assert res.status_code == 200
 
 
+def test_options_preflight_not_rate_limited() -> None:
+    """Verifies that browser CORS OPTIONS preflight requests are never rate limited."""
+    settings = get_settings()
+    cors_headers = {
+        "Origin": "http://localhost:5173",
+        "Access-Control-Request-Method": "GET",
+        "X-Forwarded-For": "203.0.113.88",
+    }
+
+    with patch.object(settings, "rate_limit_requests_per_minute", 2):
+        for _ in range(6):
+            res = client.options("/api/analytics/segments", headers=cors_headers)
+            assert res.status_code == 200
+            assert "access-control-allow-origin" in res.headers
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. Cryptographic Token Engine (HMAC-SHA256)
 # ─────────────────────────────────────────────────────────────────────────────

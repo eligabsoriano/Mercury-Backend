@@ -102,17 +102,20 @@ rate_limiter = SlidingWindowRateLimiter(
 def get_client_ip(request: Request) -> str:
     """
     Extracts the client IP address from the request.
-    Inspects X-Forwarded-For (first hop) and X-Real-IP before falling back to request.client.host.
+    When trust_proxy_headers is enabled, inspects X-Forwarded-For (first hop) and X-Real-IP.
+    Otherwise falls back directly to request.client.host to prevent spoofing in direct deployments.
     """
-    forwarded_for = request.headers.get("x-forwarded-for")
-    if forwarded_for:
-        client_ip = forwarded_for.split(",")[0].strip()
-        if client_ip:
-            return client_ip
+    req_settings = get_settings()
+    if req_settings.trust_proxy_headers:
+        forwarded_for = request.headers.get("x-forwarded-for")
+        if forwarded_for:
+            client_ip = forwarded_for.split(",")[0].strip()
+            if client_ip:
+                return client_ip
 
-    real_ip = request.headers.get("x-real-ip")
-    if real_ip:
-        return real_ip.strip()
+        real_ip = request.headers.get("x-real-ip")
+        if real_ip:
+            return real_ip.strip()
 
     if request.client and request.client.host:
         return request.client.host

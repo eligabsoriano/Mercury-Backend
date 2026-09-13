@@ -55,6 +55,13 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DBT_DIR = REPO_ROOT / "dbt" / "mercury_analytics"
 DEFAULT_STATUS_FILE = REPO_ROOT / "pipeline_status.json"
 
+# Ensure repository root is in python path
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+# Ensure .env is loaded from repository root
+load_dotenv(REPO_ROOT / ".env")
+
 # Available pipeline step identifiers in topological execution order
 VALID_STEPS = ["db_check", "ingest", "dbt", "rfm", "churn", "codegen"]
 
@@ -76,9 +83,15 @@ def execute_subprocess(cmd: List[str], cwd: Path, step_name: str) -> Tuple[bool,
     log.info("Executing [%s]: %s (cwd=%s)", step_name, cmd_str, cwd)
 
     try:
+        env = os.environ.copy()
+        if str(REPO_ROOT) not in env.get("PYTHONPATH", "").split(os.pathsep):
+            env["PYTHONPATH"] = f"{REPO_ROOT}{os.pathsep}{env.get('PYTHONPATH', '')}".rstrip(
+                os.pathsep
+            )
         proc = subprocess.run(
             cmd,
             cwd=str(cwd),
+            env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,

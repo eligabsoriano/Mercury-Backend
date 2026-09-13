@@ -70,6 +70,11 @@ class Settings:
         self.rate_limit_requests_per_minute: int = int(
             os.getenv("RATE_LIMIT_REQUESTS_PER_MINUTE", "120")
         )
+        self.trust_proxy_headers: bool = os.getenv("TRUST_PROXY_HEADERS", "true").lower() in (
+            "true",
+            "1",
+            "yes",
+        )
 
         # CORS configuration
         raw_origins = os.getenv("CORS_ORIGINS", "*")

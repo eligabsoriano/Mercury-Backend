@@ -212,11 +212,12 @@ class TestRetentionAPI:
         assert len(data["allocations"]) > 0
 
     def test_recommend_customer_playbook_success(self) -> None:
-        # Mock database provides test_cust_001
-        response = client.get("/api/retention/recommendations/test_cust_001")
+        list_res = client.get("/api/customers?page_size=1")
+        customer_id = list_res.json()["items"][0]["customer_unique_id"]
+        response = client.get(f"/api/retention/recommendations/{customer_id}")
         assert response.status_code == 200
         data = response.json()
-        assert data["customer_unique_id"] == "test_cust_001"
+        assert data["customer_unique_id"] == customer_id
         assert "primary_friction" in data
         assert "recommended_playbook" in data
         assert "expected_gross_recovery" in data
